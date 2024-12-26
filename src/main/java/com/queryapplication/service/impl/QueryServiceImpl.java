@@ -148,4 +148,56 @@ public class QueryServiceImpl implements QueryService {
             answerRepository.save(answer);
         });
     }
+
+    @Override
+    public void deleteAnswer(Long answerId) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
+        answerRepository.delete(answer);
+    }
+
+    @Override
+    public void deleteAllAnswersForQuery(Long queryId) {
+        Query query = queryRepository.findById(queryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
+        answerRepository.deleteAll(query.getAnswers());
+    }
+
+    @Override
+    public void deleteQuery(Long queryId) {
+        Query query = queryRepository.findById(queryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
+        // Delete all answers associated with the query before deleting the query itself
+        answerRepository.deleteAll(query.getAnswers());
+        queryRepository.delete(query);
+    }
+
+    @Override
+    public void editQuery(Long queryId, String newQuestion) {
+        Query query = queryRepository.findById(queryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
+        query.setQuestion(newQuestion);
+        queryRepository.save(query);
+    }
+
+    @Override
+    public void editAnswer(Long answerId, String newAnswerText) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
+        answer.setAnswer(newAnswerText);
+        answerRepository.save(answer);
+    }
+
+    @Override
+    public void copyAnswer(Long answerId) {
+        Answer answer = answerRepository.findById(answerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
+
+        // Create a copy of the answer and save it
+        Answer copy = new Answer();
+        copy.setAnswer(answer.getAnswer());
+        copy.setAddedBy(answer.getAddedBy()); // Keep the original user
+        copy.setQuery(answer.getQuery()); // Keep the original query
+        answerRepository.save(copy);
+    }
 }

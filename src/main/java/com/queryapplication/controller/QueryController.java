@@ -47,4 +47,40 @@ public class QueryController {
     public void addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
         queryService.addAnswers(newAnswers);
     }
+
+    // Delete a particular answer
+    @DeleteMapping("/answers/{answerId}")
+    public void deleteAnswer(@PathVariable Long answerId) {
+        queryService.deleteAnswer(answerId);
+    }
+
+    // Delete all answers for a particular query
+    @DeleteMapping("/{queryId}/answers")
+    public void deleteAllAnswersForQuery(@PathVariable Long queryId) {
+        queryService.deleteAllAnswersForQuery(queryId);
+    }
+
+    // Delete a particular query (and its answers)
+    @DeleteMapping("/{queryId}")
+    public void deleteQuery(@PathVariable Long queryId) {
+        queryService.deleteQuery(queryId);
+    }
+
+    // Edit a particular query (question)
+    @PutMapping("/{queryId}")
+    public void editQuery(@PathVariable Long queryId, @RequestBody String newQuestion) {
+        queryService.editQuery(queryId, newQuestion);
+    }
+
+    // Edit a particular answer
+    @PutMapping("/answers/{answerId}")
+    public void editAnswer(@PathVariable Long answerId, @RequestBody String newAnswerText) {
+        queryService.editAnswer(answerId, newAnswerText);
+    }
+
+    // Copy a particular answer
+    @PostMapping("/answers/{answerId}/copy")
+    public void copyAnswer(@PathVariable Long answerId) {
+        queryService.copyAnswer(answerId);
+    }
 }

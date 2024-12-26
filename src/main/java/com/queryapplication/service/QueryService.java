@@ -11,4 +11,16 @@ public interface QueryService {
     QueryWithAnswersDTO getQueryWithAnswersById(Long id);
     void addQueries(List<NewQueryDTO> newQueries);
     void addAnswers(List<NewAnswerDTO> newAnswers);
+
+    void deleteAnswer(Long answerId);
+
+    void deleteAllAnswersForQuery(Long queryId);
+
+    void deleteQuery(Long queryId);
+
+    void editQuery(Long queryId, String newQuestion);
+
+    void editAnswer(Long answerId, String newAnswerText);
+
+    void copyAnswer(Long answerId);
 }
