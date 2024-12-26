@@ -1,8 +1,13 @@
 package com.queryapplication.repository;
 
 import com.queryapplication.entity.Role;
+import com.queryapplication.entity.RoleName;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
+@Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
-    Role findByRoleName(String roleName); // Fetch role by firstName (e.g., Admin, Super Admin)
+    Optional<Role> findByRoleName(RoleName roleName);
 }
