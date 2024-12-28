@@ -114,22 +114,51 @@ public class QueryServiceImpl implements QueryService {
     @Override
     public void addQueries(List<NewQueryDTO> newQueries) {
         newQueries.forEach(queryDTO -> {
+            // Find the user who added the query
             Users user = userRepository.findById(queryDTO.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+            // Extract tag names from the request
             Set<String> tagNames = queryDTO.getTags().stream()
                     .map(TagDTO::getTagName)
                     .collect(Collectors.toSet());
-            Set<Tag> tags = new HashSet<>(tagRepository.findByTagNameIn(tagNames));
 
+            // Fetch existing tags from the database
+            Set<Tag> existingTags = new HashSet<>(tagRepository.findByTagNameIn(tagNames));
+
+            // Determine which tags need to be created
+            Set<String> existingTagNames = existingTags.stream()
+                    .map(Tag::getTagName)
+                    .collect(Collectors.toSet());
+            Set<Tag> newTags = tagNames.stream()
+                    .filter(tagName -> !existingTagNames.contains(tagName))
+                    .map(tagName -> {
+                        TagDTO tagDTO = queryDTO.getTags().stream()
+                                .filter(tag -> tag.getTagName().equals(tagName))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalStateException("Tag group missing for " + tagName));
+                        Tag newTag = new Tag();
+                        newTag.setTagName(tagName);
+                        newTag.setTagGroup(TagGroup.valueOf(String.valueOf(tagDTO.getTagGroup()))); // Assuming TagGroup is an enum
+                        return newTag;
+                    })
+                    .collect(Collectors.toSet());
+
+            // Save new tags to the database
+            newTags = new HashSet<>(tagRepository.saveAll(newTags));
+
+            // Combine existing and new tags
+            existingTags.addAll(newTags);
+
+            // Create and save the query
             Query query = new Query();
             query.setQuestion(queryDTO.getQuestion());
             query.setAddedBy(user);
-            query.setTags(tags);
-
+            query.setTags(existingTags);
             queryRepository.save(query);
         });
     }
+
 
     @Override
     public void addAnswers(List<NewAnswerDTO> newAnswers) {
