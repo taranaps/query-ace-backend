@@ -25,12 +25,4 @@ public class Role {
     @Enumerated(EnumType.STRING)
     @Column(name = "role_name", nullable = false, unique = true)
     private RoleName roleName;
-
-    @Override
-    public String toString() {
-        return "Role{" +
-                "id=" + id +
-                ", roleName=" + roleName +
-                '}';
-    }
 }

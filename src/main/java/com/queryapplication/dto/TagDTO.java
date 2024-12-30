@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TagDTO {
     private String tagName;
-    private TagGroup tagGroup; // E.g., "Company", "Category", etc.
+    private String tagGroupName; // E.g., "Company", "Category", etc.
 
 }

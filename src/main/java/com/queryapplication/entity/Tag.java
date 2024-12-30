@@ -1,10 +1,12 @@
 package com.queryapplication.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -26,20 +28,12 @@ public class Tag {
     @Column(name = "tag_name", nullable = false, unique = true)
     private String tagName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tag_groups", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "tag_group_id", nullable = false)
+    @JsonIgnore
     private TagGroup tagGroup;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @Override
-    public String toString() {
-        return "Tag{" +
-                "tagId=" + id +
-                ", tagName='" + tagName + '\'' +
-                ", tagGroup=" + tagGroup +
-                ", createdAt=" + createdAt +
-                '}';
-    }
 }

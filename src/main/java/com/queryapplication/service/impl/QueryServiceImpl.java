@@ -20,14 +20,16 @@ public class QueryServiceImpl implements QueryService {
     private final QueryRepository queryRepository;
     private final AnswerRepository answerRepository;
     private final TagRepository tagRepository;
+    private final TagGroupRepository tagGroupRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, UserRepository userRepository, ModelMapper modelMapper) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
+        this.tagGroupRepository = tagGroupRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
     }
@@ -49,14 +51,19 @@ public class QueryServiceImpl implements QueryService {
 
     private QueryDTO mapToQueryDTO(Query query) {
         QueryDTO dto = modelMapper.map(query, QueryDTO.class);
+        dto.setId(query.getId());
+        dto.setUsersId(query.getAddedBy().getId());
         dto.setUsersUsername(query.getAddedBy().getUsername());
+        dto.setFirstName(query.getAddedBy().getFirstName());
+        dto.setEmail(query.getAddedBy().getEmail());
+        dto.setCreatedAt(query.getCreatedAt());
+        dto.setUpdatedAt(query.getUpdatedAt());
 
-        // Handle roles
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleName(role != null ? role.getRoleName() : null);
 
         dto.setTags(query.getTags().stream()
-                .map(tag -> new TagDTO(tag.getTagName(), tag.getTagGroup()))
+                .map(tag -> new TagDTO(tag.getTagName(), tag.getTagGroup().getName()))
                 .collect(Collectors.toSet()));
 
         return dto;
@@ -79,21 +86,34 @@ public class QueryServiceImpl implements QueryService {
 
     private QueryWithAnswersDTO mapToQueryWithAnswersDTO(Query query) {
         QueryWithAnswersDTO dto = new QueryWithAnswersDTO();
+        dto.setId(query.getId());
         dto.setQuestion(query.getQuestion());
+        dto.setQueryCreatedAt(query.getCreatedAt());
+        dto.setQueryUpdatedAt(query.getUpdatedAt());
+        dto.setUsersId(query.getAddedBy().getId());
         dto.setUsersUsername(query.getAddedBy().getUsername());
+        dto.setFirstName(query.getAddedBy().getFirstName());
+        dto.setEmail(query.getAddedBy().getEmail());
 
         // Handle roles
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleRoleName(role != null ? role.getRoleName() : null);
 
         dto.setTags(query.getTags().stream()
-                .map(tag -> new TagDTO(tag.getTagName(), tag.getTagGroup()))
+                .map(tag -> new TagDTO(tag.getTagName(), tag.getTagGroup().getName()))
                 .collect(Collectors.toSet()));
 
         dto.setAnswers(query.getAnswers().stream()
                 .map(answer -> {
                     AnswerDTO answerDTO = new AnswerDTO();
+                    answerDTO.setId(answer.getId());
+                    answerDTO.setUsersId(answer.getAddedBy().getId());
+                    answerDTO.setUsersUsername(answer.getAddedBy().getUsername());
+                    answerDTO.setFirstName(answer.getAddedBy().getFirstName());
+                    answerDTO.setEmail(answer.getAddedBy().getEmail());
                     answerDTO.setAnswer(answer.getAnswer());
+                    answerDTO.setCreatedAt(answer.getCreatedAt());
+                    answerDTO.setUpdatedAt(answer.getUpdatedAt());
 
                     // Set username and role for the user who added the answer
                     Users addedBy = answer.getAddedBy();
@@ -133,13 +153,20 @@ public class QueryServiceImpl implements QueryService {
             Set<Tag> newTags = tagNames.stream()
                     .filter(tagName -> !existingTagNames.contains(tagName))
                     .map(tagName -> {
+                        // Get the tag group from the DTO
                         TagDTO tagDTO = queryDTO.getTags().stream()
                                 .filter(tag -> tag.getTagName().equals(tagName))
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException("Tag group missing for " + tagName));
+
+                        // Fetch the TagGroup entity from the database
+                        TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
+                                .orElseThrow(() -> new IllegalArgumentException("Tag group not found for " + tagDTO.getTagGroupName()));
+
+                        // Create a new Tag
                         Tag newTag = new Tag();
                         newTag.setTagName(tagName);
-                        newTag.setTagGroup(TagGroup.valueOf(String.valueOf(tagDTO.getTagGroup()))); // Assuming TagGroup is an enum
+                        newTag.setTagGroup(tagGroup); // Set the TagGroup from the database
                         return newTag;
                     })
                     .collect(Collectors.toSet());
@@ -158,7 +185,6 @@ public class QueryServiceImpl implements QueryService {
             queryRepository.save(query);
         });
     }
-
 
     @Override
     public void addAnswers(List<NewAnswerDTO> newAnswers) {

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +31,7 @@ public class FileUpload {
     @JoinColumn(name = "uploaded_by", nullable = false)
     private Users uploadedBy;
 
-    @Column(name = "uploaded_at", updatable = false)
+    @Column(name = "uploaded_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @CreationTimestamp
     private LocalDateTime uploadedAt;
 }
