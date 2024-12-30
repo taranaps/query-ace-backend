@@ -59,29 +59,39 @@ public class QueryController {
         queryService.deleteAnswer(answerId);
     }
 
-    // Delete all answers for a particular query
     @DeleteMapping("/{queryId}/answers")
-    public void deleteAllAnswersForQuery(@PathVariable Long queryId) {
-        queryService.deleteAllAnswersForQuery(queryId);
+    public ResponseEntity<Void> deleteAnswersForQuery(@PathVariable Long queryId) {
+        queryService.deleteAllAnswersForQuery(queryId); // Service method to delete all answers for the given query
+        return ResponseEntity.noContent().build();
     }
 
-    // Delete a particular query (and its answers)
     @DeleteMapping("/{queryId}")
-    public void deleteQuery(@PathVariable Long queryId) {
-        queryService.deleteQuery(queryId);
+    public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId) {
+        queryService.deleteQuery(queryId); // Service method to delete the query and its answers
+        return ResponseEntity.noContent().build();
     }
 
     // Edit a particular query (question)
-    @PutMapping("/{queryId}")
-    public void editQuery(@PathVariable Long queryId, @RequestBody String newQuestion) {
-        queryService.editQuery(queryId, newQuestion);
+    @PatchMapping("/{queryId}")
+    public void editQuery(@PathVariable Long queryId, @RequestBody List<NewQueryDTO> newQueryDetails) {
+        if (newQueryDetails.isEmpty()) {
+            throw new IllegalArgumentException("Request body should contain a list of queries.");
+        }
+        NewQueryDTO newQueryDTO = newQueryDetails.get(0); // Assuming only one query is passed in the body
+        queryService.editQuery(queryId, newQueryDTO);
     }
 
     // Edit a particular answer
-    @PutMapping("/answers/{answerId}")
-    public void editAnswer(@PathVariable Long answerId, @RequestBody String newAnswerText) {
-        queryService.editAnswer(answerId, newAnswerText);
+    @PatchMapping("/answers/{answerId}")
+    public void editAnswer(@PathVariable Long answerId, @RequestBody List<NewAnswerDTO> newAnswerDetails) {
+        if (newAnswerDetails.isEmpty()) {
+            throw new IllegalArgumentException("Request body should contain a list of answers.");
+        }
+        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
+        queryService.editAnswer(answerId, newAnswerDTO);
     }
+
+
 
     // Copy a particular answer
     @PostMapping("/answers/{answerId}/copy")
@@ -114,4 +124,11 @@ public class QueryController {
     public ResponseEntity<List<TagDTO>> searchTags(@RequestParam String tagName) {
         return ResponseEntity.ok(tagService.searchTags(tagName));
     }
+
+    @GetMapping("/tags/details")
+    public ResponseEntity<List<TagGroupDTO>> getTagGroups() {
+        List<TagGroupDTO> tagGroups = tagService.getTagGroups();
+        return ResponseEntity.ok(tagGroups);
+    }
+
 }

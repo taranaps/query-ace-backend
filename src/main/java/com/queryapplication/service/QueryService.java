@@ -18,9 +18,9 @@ public interface QueryService {
 
     void deleteQuery(Long queryId);
 
-    void editQuery(Long queryId, String newQuestion);
+    void editQuery(Long queryId, NewQueryDTO newQueryDTO);
 
-    void editAnswer(Long answerId, String newAnswerText);
+    void editAnswer(Long answerId, NewAnswerDTO newAnswerDTO);
 
     void copyAnswer(Long answerId);
 }

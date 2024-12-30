@@ -1,6 +1,7 @@
 package com.queryapplication.service.impl;
 
 import com.queryapplication.dto.TagDTO;
+import com.queryapplication.dto.TagGroupDTO;
 import com.queryapplication.entity.Tag;
 import com.queryapplication.entity.TagGroup;
 import com.queryapplication.repository.TagGroupRepository;
@@ -82,4 +83,21 @@ public class TagServiceImpl implements TagService {
                 .map(tag -> new TagDTO(tag.getTagName(), tag.getTagGroup().getName()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<TagGroupDTO> getTagGroups() {
+        return tagGroupRepository.findAll()
+                .stream()
+                .map(tagGroup -> {
+                    TagGroupDTO dto = new TagGroupDTO();
+                    dto.setTagGroupName(tagGroup.getName());
+                    dto.setTagNames(tagGroup.getTags()
+                            .stream()
+                            .map(Tag::getTagName) // No more error here
+                            .collect(Collectors.toList()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
 }
