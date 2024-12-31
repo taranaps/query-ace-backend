@@ -9,8 +9,8 @@ public interface QueryService {
     QueryDTO getQueryById(Long id);
     List<QueryWithAnswersDTO> getAllQueriesWithAnswers();
     QueryWithAnswersDTO getQueryWithAnswersById(Long id);
-    void addQueries(List<NewQueryDTO> newQueries);
-    void addAnswers(List<NewAnswerDTO> newAnswers);
+    List<Long> addQueries(List<NewQueryDTO> newQueries);
+    List<AnswerResponseDTO> addAnswers(List<NewAnswerDTO> newAnswers);
 
     void deleteAnswer(Long answerId);
 

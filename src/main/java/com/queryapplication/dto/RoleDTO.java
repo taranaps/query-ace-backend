@@ -5,5 +5,5 @@ import lombok.Data;
 
 @Data
 public class RoleDTO {
-    private RoleName roleName; // E.g., "Admin", "Super Admin"
+    private RoleName roleName;
 }

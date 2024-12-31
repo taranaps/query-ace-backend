@@ -29,10 +29,10 @@ public class RegisterDTO {
     private String password;
 
     @NotNull(message = "Role name cannot be null")
-    private RoleName roleName; // ADMIN or SUPER_ADMIN
+    private RoleName roleName;
 
     private String location;
 
     @NotNull(message = "Status is required")
-    private Status status; // ACTIVE or INACTIVE
+    private Status status;
 }

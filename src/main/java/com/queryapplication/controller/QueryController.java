@@ -44,16 +44,19 @@ public class QueryController {
     }
 
     @PostMapping
-    public void addQueries(@RequestBody List<NewQueryDTO> newQueries) {
-        queryService.addQueries(newQueries);
+    public ResponseEntity<List<Long>> addQueries(@RequestBody List<NewQueryDTO> newQueries) {
+        List<Long> queryIds = queryService.addQueries(newQueries);
+        return ResponseEntity.ok(queryIds);
     }
+
 
     @PostMapping("/{id}/answers")
-    public void addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
-        queryService.addAnswers(newAnswers);
+    public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
+        List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
+        return ResponseEntity.ok(response);
     }
 
-    // Delete a particular answer
+
     @DeleteMapping("/answers/{answerId}")
     public void deleteAnswer(@PathVariable Long answerId) {
         queryService.deleteAnswer(answerId);
@@ -71,7 +74,6 @@ public class QueryController {
         return ResponseEntity.noContent().build();
     }
 
-    // Edit a particular query (question)
     @PatchMapping("/{queryId}")
     public void editQuery(@PathVariable Long queryId, @RequestBody List<NewQueryDTO> newQueryDetails) {
         if (newQueryDetails.isEmpty()) {
@@ -81,7 +83,6 @@ public class QueryController {
         queryService.editQuery(queryId, newQueryDTO);
     }
 
-    // Edit a particular answer
     @PatchMapping("/answers/{answerId}")
     public void editAnswer(@PathVariable Long answerId, @RequestBody List<NewAnswerDTO> newAnswerDetails) {
         if (newAnswerDetails.isEmpty()) {
@@ -93,7 +94,6 @@ public class QueryController {
 
 
 
-    // Copy a particular answer
     @PostMapping("/answers/{answerId}/copy")
     public void copyAnswer(@PathVariable Long answerId) {
         queryService.copyAnswer(answerId);
@@ -101,25 +101,21 @@ public class QueryController {
 
     // -------------------- Tag-related APIs --------------------
 
-    // Get all tag groups
     @GetMapping("/tags/groups")
     public ResponseEntity<List<String>> getAllTagGroups() {
         return ResponseEntity.ok(tagService.getAllTagGroups());
     }
 
-    // Get tags by group
     @GetMapping("/tags/group/{tagGroup}")
     public ResponseEntity<List<TagDTO>> getTagsByGroup(@PathVariable String tagGroup) {
         return ResponseEntity.ok(tagService.getTagsByGroup(tagGroup));
     }
 
-    // Add a new tag
     @PostMapping("/tags")
     public ResponseEntity<TagDTO> addTag(@RequestBody TagDTO tagDTO) {
         return ResponseEntity.ok(tagService.addTag(tagDTO));
     }
 
-    // Search for tags by name
     @GetMapping("/tags/search")
     public ResponseEntity<List<TagDTO>> searchTags(@RequestParam String tagName) {
         return ResponseEntity.ok(tagService.searchTags(tagName));

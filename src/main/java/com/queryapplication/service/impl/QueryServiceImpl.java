@@ -95,7 +95,6 @@ public class QueryServiceImpl implements QueryService {
         dto.setFirstName(query.getAddedBy().getFirstName());
         dto.setEmail(query.getAddedBy().getEmail());
 
-        // Handle roles
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleRoleName(role != null ? role.getRoleName() : null);
 
@@ -115,7 +114,6 @@ public class QueryServiceImpl implements QueryService {
                     answerDTO.setCreatedAt(answer.getCreatedAt());
                     answerDTO.setUpdatedAt(answer.getUpdatedAt());
 
-                    // Set username and role for the user who added the answer
                     Users addedBy = answer.getAddedBy();
                     if (addedBy != null) {
                         answerDTO.setUsersUsername(addedBy.getUsername());
@@ -130,24 +128,20 @@ public class QueryServiceImpl implements QueryService {
         return dto;
     }
 
-
     @Override
-    public void addQueries(List<NewQueryDTO> newQueries) {
-        newQueries.forEach(queryDTO -> {
-            // Find the user who added the query
+    public List<Long> addQueries(List<NewQueryDTO> newQueries) {
+        return newQueries.stream().map(queryDTO -> {
+
             Users user = userRepository.findById(queryDTO.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-            // Extract tag names from the request
             Set<String> tagNames = queryDTO.getTags().stream()
                     .map(TagDTO::getTagName)
                     .collect(Collectors.toSet());
 
-            // Fetch existing tags from the database using the 'findByTagNameIn' method
             List<Tag> existingTagsList = tagRepository.findByTagNameIn(tagNames);
             Set<Tag> existingTagsSet = new HashSet<>(existingTagsList);
 
-            // Determine which tags need to be created
             Set<String> existingTagNames = existingTagsSet.stream()
                     .map(Tag::getTagName)
                     .collect(Collectors.toSet());
@@ -160,37 +154,33 @@ public class QueryServiceImpl implements QueryService {
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException("Tag group missing for " + tagName));
 
-                        // Fetch the TagGroup entity from the database
                         TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
                                 .orElseThrow(() -> new IllegalArgumentException("Tag group not found for " + tagDTO.getTagGroupName()));
 
-                        // Create a new Tag
                         Tag newTag = new Tag();
                         newTag.setTagName(tagName);
-                        newTag.setTagGroup(tagGroup); // Set the TagGroup from the database
+                        newTag.setTagGroup(tagGroup);
                         return newTag;
                     })
                     .collect(Collectors.toSet());
 
-            // Save new tags to the database
             newTags = new HashSet<>(tagRepository.saveAll(newTags));
 
-            // Combine existing and new tags
             existingTagsSet.addAll(newTags);
 
-            // Create and save the query
             Query query = new Query();
             query.setQuestion(queryDTO.getQuestion());
             query.setAddedBy(user);
             query.setTags(existingTagsSet);
-            queryRepository.save(query);
-        });
+            Query savedQuery = queryRepository.save(query);
+
+            return savedQuery.getId();
+        }).collect(Collectors.toList());
     }
 
-
     @Override
-    public void addAnswers(List<NewAnswerDTO> newAnswers) {
-        newAnswers.forEach(answerDTO -> {
+    public List<AnswerResponseDTO> addAnswers(List<NewAnswerDTO> newAnswers) {
+        return newAnswers.stream().map(answerDTO -> {
             Users user = userRepository.findById(answerDTO.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -202,8 +192,10 @@ public class QueryServiceImpl implements QueryService {
             answer.setAddedBy(user);
             answer.setQuery(query);
 
-            answerRepository.save(answer);
-        });
+            Answer savedAnswer = answerRepository.save(answer);
+
+            return new AnswerResponseDTO(savedAnswer.getId(), savedAnswer.getQuery().getId());
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -224,36 +216,29 @@ public class QueryServiceImpl implements QueryService {
     public void deleteQuery(Long queryId) {
         Query query = queryRepository.findById(queryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
-        // Delete all answers associated with the query before deleting the query itself
+
         answerRepository.deleteAll(query.getAnswers());
         queryRepository.delete(query);
     }
 
     @Override
     public void editQuery(Long queryId, NewQueryDTO newQueryDTO) {
-        Query query = queryRepository.findById(queryId)
+        Query existingQuery = queryRepository.findById(queryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
 
-        // Find the user who is updating the query
-        Users user = userRepository.findById(newQueryDTO.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        existingQuery.setQuestion(newQueryDTO.getQuestion());
 
-        // Update question text
-        query.setQuestion(newQueryDTO.getQuestion());
-        query.setAddedBy(user);
-
-        // Handle tags (update or add new tags)
         Set<String> tagNames = newQueryDTO.getTags().stream()
                 .map(TagDTO::getTagName)
                 .collect(Collectors.toSet());
+        Set<Tag> existingTags = new HashSet<>(tagRepository.findByTagNameIn(tagNames));
 
-        // Fetch existing tags from the database using 'findByTagNameIn' method
-        List<Tag> existingTagsList = tagRepository.findByTagNameIn(tagNames);
-        Set<Tag> existingTagsSet = new HashSet<>(existingTagsList);
+        Set<String> existingTagNames = existingTags.stream()
+                .map(Tag::getTagName)
+                .collect(Collectors.toSet());
 
-        // Determine which tags need to be created
         Set<Tag> newTags = tagNames.stream()
-                .filter(tagName -> !existingTagsSet.stream().anyMatch(tag -> tag.getTagName().equals(tagName)))
+                .filter(tagName -> !existingTagNames.contains(tagName))
                 .map(tagName -> {
                     TagDTO tagDTO = newQueryDTO.getTags().stream()
                             .filter(tag -> tag.getTagName().equals(tagName))
@@ -261,54 +246,44 @@ public class QueryServiceImpl implements QueryService {
                             .orElseThrow(() -> new IllegalStateException("Tag group missing for " + tagName));
                     TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
                             .orElseThrow(() -> new IllegalArgumentException("Tag group not found for " + tagDTO.getTagGroupName()));
+
                     Tag newTag = new Tag();
                     newTag.setTagName(tagName);
                     newTag.setTagGroup(tagGroup);
                     return newTag;
-                })
-                .collect(Collectors.toSet());
+                }).collect(Collectors.toSet());
 
-        // Save new tags
-        tagRepository.saveAll(newTags);
+        newTags = new HashSet<>(tagRepository.saveAll(newTags));
+        existingTags.addAll(newTags);
 
-        // Combine existing and new tags
-        existingTagsSet.addAll(newTags);
-        query.setTags(existingTagsSet);
+        existingQuery.setTags(existingTags);
 
-        // Save updated query
-        queryRepository.save(query);
+        queryRepository.save(existingQuery);
     }
-
 
     @Override
     public void editAnswer(Long answerId, NewAnswerDTO newAnswerDTO) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
 
-        // Find the user who is updating the answer
         Users user = userRepository.findById(newAnswerDTO.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Update answer text
         answer.setAnswer(newAnswerDTO.getAnswer());
         answer.setAddedBy(user);
 
-        // Save updated answer
         answerRepository.save(answer);
     }
-
-
 
     @Override
     public void copyAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
 
-        // Create a copy of the answer and save it
         Answer copy = new Answer();
         copy.setAnswer(answer.getAnswer());
-        copy.setAddedBy(answer.getAddedBy()); // Keep the original user
-        copy.setQuery(answer.getQuery()); // Keep the original query
+        copy.setAddedBy(answer.getAddedBy());
+        copy.setQuery(answer.getQuery());
         answerRepository.save(copy);
     }
 }

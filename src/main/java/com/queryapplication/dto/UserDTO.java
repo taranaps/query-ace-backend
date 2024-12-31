@@ -12,6 +12,6 @@ public class UserDTO {
     private String username;
     private String email;
     private String location;
-    private Status status; // Active or Inactive
-    private Set<RoleDTO> roles; // E.g., "Admin", "Super Admin"
+    private Status status;
+    private Set<RoleDTO> roles;
 }
