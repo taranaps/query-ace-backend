@@ -29,8 +29,10 @@ public class Query {
     @Column(name = "question", nullable = false, columnDefinition = "TEXT")
     private String question;
 
-    @Column(name = "file_id")
-    private Integer fileId;
+    @ManyToOne
+    @JoinColumn(name = "file_id")
+    @JsonIgnore
+    private FileUpload fileId;
 
     @ManyToOne
     @JoinColumn(name = "added_by", nullable = false)
