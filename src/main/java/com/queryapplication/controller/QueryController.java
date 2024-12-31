@@ -127,4 +127,16 @@ public class QueryController {
         return ResponseEntity.ok(tagGroups);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<QueryWithAnswersDTO>> searchQueries(
+            @RequestParam(required = false) String questionText,
+            @RequestParam(required = false) List<String> tags,
+            @RequestParam(required = false) String tagGroup,
+            @RequestParam(required = false) String answer) {
+
+        List<QueryWithAnswersDTO> result = queryService.searchQueries(questionText, tags, tagGroup, answer);
+        return ResponseEntity.ok(result);
+    }
+
+
 }

@@ -23,4 +23,6 @@ public interface QueryService {
     void editAnswer(Long answerId, NewAnswerDTO newAnswerDTO);
 
     void copyAnswer(Long answerId);
+
+    List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer);
 }

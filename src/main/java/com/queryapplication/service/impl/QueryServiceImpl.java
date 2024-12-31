@@ -286,4 +286,15 @@ public class QueryServiceImpl implements QueryService {
         copy.setQuery(answer.getQuery());
         answerRepository.save(copy);
     }
+
+    @Override
+    public List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer) {
+        // Using the repository method to perform the search
+        List<Query> queries = queryRepository.searchQueries(questionText, tags, tagGroup, answer);
+
+        return queries.stream()
+                .map(this::mapToQueryWithAnswersDTO)
+                .collect(Collectors.toList());
+    }
+
 }
