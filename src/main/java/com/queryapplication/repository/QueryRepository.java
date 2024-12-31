@@ -24,4 +24,14 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
             @Param("tags") List<String> tags,
             @Param("tagGroup") String tagGroup,
             @Param("answer") String answer);
+
+    @Query("SELECT q FROM com.queryapplication.entity.Query q " +
+            "JOIN q.tags t " +
+            "JOIN t.tagGroup tg " +
+            "LEFT JOIN q.answers a " +
+            "WHERE LOWER(q.question) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(a.answer) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(t.tagName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(tg.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<com.queryapplication.entity.Query> searchQueriesByKeyword(String keyword);
 }

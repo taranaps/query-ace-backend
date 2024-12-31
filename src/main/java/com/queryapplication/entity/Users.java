@@ -39,8 +39,9 @@ public class Users {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "location")
-    private String location;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "location", nullable = false)
+    private LocationName location;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

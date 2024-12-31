@@ -25,4 +25,6 @@ public interface QueryService {
     void copyAnswer(Long answerId);
 
     List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer);
+
+    List<QueryWithAnswersDTO> searchQueriesByKeyword(String keyword);
 }

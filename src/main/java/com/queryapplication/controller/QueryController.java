@@ -138,5 +138,10 @@ public class QueryController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/search")
+    public ResponseEntity<List<QueryWithAnswersDTO>> searchQueriesByKeyword(@RequestBody SearchRequestDTO searchRequest) {
+        List<QueryWithAnswersDTO> results = queryService.searchQueriesByKeyword(searchRequest.getKeyword());
+        return ResponseEntity.ok(results);
+    }
 
 }
