@@ -49,13 +49,11 @@ public class QueryController {
         return ResponseEntity.ok(queryIds);
     }
 
-
     @PostMapping("/{id}/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
         return ResponseEntity.ok(response);
     }
-
 
     @DeleteMapping("/answers/{answerId}")
     public void deleteAnswer(@PathVariable Long answerId) {

@@ -6,7 +6,6 @@ import com.queryapplication.repository.RoleRepository;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -17,13 +16,11 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public AdminServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -40,7 +37,7 @@ public class AdminServiceImpl implements AdminService {
         newUser.setFirstName(createAdminDTO.getFirstName());
         newUser.setEmail(createAdminDTO.getEmail());
         newUser.setUsername(createAdminDTO.getUsername());
-        newUser.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
+        newUser.setPassword(createAdminDTO.getPassword());
         newUser.setLocation(LocationName.valueOf(String.valueOf(createAdminDTO.getLocation())));
         newUser.setStatus(Status.ACTIVE);
 
