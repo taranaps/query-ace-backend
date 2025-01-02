@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/v1/queryapplication/admin")
 public class AdminController {
 
     private final AdminService adminService;
