@@ -7,7 +7,9 @@ import com.queryapplication.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -143,5 +145,21 @@ public class QueryController {
         List<QueryWithAnswersDTO> results = queryService.searchQueriesByKeyword(searchRequest.getKeyword());
         return ResponseEntity.ok(results);
     }
+    @PostMapping("/upload-excel")
+    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("Please select a file to upload.");
+            }
+
+
+            queryService.processFile(file);
+
+            return ResponseEntity.ok("File processed successfully.");
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
+        }
+    }
+
 
 }

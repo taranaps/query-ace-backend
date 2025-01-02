@@ -5,10 +5,14 @@ import com.queryapplication.entity.*;
 import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.*;
 import com.queryapplication.service.QueryService;
+
+import com.queryapplication.util.ExcelReaderUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,14 +28,19 @@ public class QueryServiceImpl implements QueryService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
+    private final ExcelReaderUtil excelReaderUtil;
+
+
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, ExcelReaderUtil excelReaderUtil) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
         this.tagGroupRepository = tagGroupRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.excelReaderUtil = excelReaderUtil;
+
     }
 
     @Override
@@ -305,5 +314,26 @@ public class QueryServiceImpl implements QueryService {
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void processFile(MultipartFile file) throws IOException {
+        // Get the file name and check the extension
+        String fileName = file.getOriginalFilename();
+
+        if (fileName != null) {
+            if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
+                // Process Excel file
+                excelReaderUtil.processExcel(file);
+            } else if (fileName.endsWith(".docx")) {
+                throw new IllegalArgumentException("please write for doc.");
+
+            } else {
+                throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
+            }
+        } else {
+            throw new IllegalArgumentException("File name is invalid or null.");
+        }
+    }
+
 
 }
