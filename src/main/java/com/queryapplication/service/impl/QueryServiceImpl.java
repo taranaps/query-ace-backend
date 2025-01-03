@@ -5,10 +5,16 @@ import com.queryapplication.entity.*;
 import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.*;
 import com.queryapplication.service.QueryService;
+
+import com.queryapplication.util.DocReaderUtil;
+import com.queryapplication.util.ExcelReaderUtil;
+import com.queryapplication.util.FileReaderUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,14 +30,21 @@ public class QueryServiceImpl implements QueryService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
+    private final ExcelReaderUtil excelReaderUtil;
+    private final DocReaderUtil docReaderUtil;
+    private final FileReaderUtil fileReaderUtil;
+
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
         this.tagGroupRepository = tagGroupRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.excelReaderUtil = excelReaderUtil;
+        this.docReaderUtil = docReaderUtil;
+        this.fileReaderUtil = fileReaderUtil;
     }
 
     @Override
@@ -199,6 +212,85 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
+    public List<AnswerResponseDTO> addAnswersToQuery(Long queryId, List<AnswerRequestDTO> newAnswers) {
+        Query query = queryRepository.findById(queryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
+
+        return newAnswers.stream().map(answerDTO -> {
+            Users user = userRepository.findById(answerDTO.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            Answer answer = new Answer();
+            answer.setAnswer(answerDTO.getAnswer());
+            answer.setAddedBy(user);
+            answer.setQuery(query);
+
+            Answer savedAnswer = answerRepository.save(answer);
+
+            return new AnswerResponseDTO(savedAnswer.getId(), savedAnswer.getQuery().getId());
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Long> addBulkQueries(List<BulkQueryDTO> bulkQueries) {
+        return bulkQueries.stream().map(queryDTO -> {
+            Users user = userRepository.findById(queryDTO.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            Set<String> tagNames = queryDTO.getTags().stream()
+                    .map(TagDTO::getTagName)
+                    .collect(Collectors.toSet());
+
+            List<Tag> existingTagsList = tagRepository.findByTagNameIn(tagNames);
+            Set<Tag> existingTagsSet = new HashSet<>(existingTagsList);
+
+            Set<String> existingTagNames = existingTagsSet.stream()
+                    .map(Tag::getTagName)
+                    .collect(Collectors.toSet());
+            Set<Tag> newTags = tagNames.stream()
+                    .filter(tagName -> !existingTagNames.contains(tagName))
+                    .map(tagName -> {
+                        TagDTO tagDTO = queryDTO.getTags().stream()
+                                .filter(tag -> tag.getTagName().equals(tagName))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalStateException("Tag group missing for " + tagName));
+
+                        TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
+                                .orElseThrow(() -> new IllegalArgumentException("Tag group not found for " + tagDTO.getTagGroupName()));
+
+                        Tag newTag = new Tag();
+                        newTag.setTagName(tagName);
+                        newTag.setTagGroup(tagGroup);
+                        return newTag;
+                    })
+                    .collect(Collectors.toSet());
+
+            newTags = new HashSet<>(tagRepository.saveAll(newTags));
+            existingTagsSet.addAll(newTags);
+
+            Query query = new Query();
+            query.setQuestion(queryDTO.getQuestion());
+            query.setAddedBy(user);
+            query.setTags(existingTagsSet);
+            Query savedQuery = queryRepository.save(query);
+
+            queryDTO.getAnswers().forEach(answerDTO -> {
+                Users answerUser = userRepository.findById(answerDTO.getUserId())
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+                Answer answer = new Answer();
+                answer.setAnswer(answerDTO.getAnswer());
+                answer.setAddedBy(answerUser);
+                answer.setQuery(savedQuery);
+
+                answerRepository.save(answer);
+            });
+
+            return savedQuery.getId();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public void deleteAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
@@ -305,5 +397,41 @@ public class QueryServiceImpl implements QueryService {
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void processFile(MultipartFile file) throws IOException {
+
+        String fileName = file.getOriginalFilename();
+
+        if (fileName != null) {
+            if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
+                excelReaderUtil.processExcel(file);
+            } else if (fileName.endsWith(".docx")) {
+                docReaderUtil.processDocFile(file);
+            } else {
+                throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
+            }
+        } else {
+            throw new IllegalArgumentException("File name is invalid or null.");
+        }
+    }
+
+    @Override
+    public void processFileReader(MultipartFile file) throws IOException {
+
+        String fileName = file.getOriginalFilename();
+
+        if (fileName != null) {
+            if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
+                fileReaderUtil.processExcel(file);
+            } else {
+                throw new IllegalArgumentException("Unsupported file format. Only .xlsx is allowed.");
+            }
+        } else {
+            throw new IllegalArgumentException("File name is invalid or null.");
+        }
+    }
+
+
 
 }
