@@ -26,7 +26,7 @@ public class Query {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "question", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "question", columnDefinition = "TEXT", unique = true)
     private String question;
 
     @ManyToOne
@@ -35,7 +35,7 @@ public class Query {
     private FileUpload fileId;
 
     @ManyToOne
-    @JoinColumn(name = "added_by", nullable = false)
+    @JoinColumn(name = "added_by")
     private Users addedBy;
 
     @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
@@ -52,7 +52,7 @@ public class Query {
             joinColumns = @JoinColumn(name = "query_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id", referencedColumnName = "id")
     )
-    private Set<Tag> tags;
+    private Set<Tag> tags = new HashSet<>();
 
     @OneToMany(mappedBy = "query", cascade = CascadeType.ALL, targetEntity = Answer.class, orphanRemoval = true)
     @JsonIgnore

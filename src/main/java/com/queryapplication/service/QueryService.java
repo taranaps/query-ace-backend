@@ -14,6 +14,10 @@ public interface QueryService {
     List<Long> addQueries(List<NewQueryDTO> newQueries);
     List<AnswerResponseDTO> addAnswers(List<NewAnswerDTO> newAnswers);
 
+    List<AnswerResponseDTO> addAnswersToQuery(Long queryId, List<AnswerRequestDTO> newAnswers);
+
+    List<Long> addBulkQueries(List<BulkQueryDTO> bulkQueries);
+
     void deleteAnswer(Long answerId);
 
     void deleteAllAnswersForQuery(Long queryId);
@@ -30,4 +34,6 @@ public interface QueryService {
 
     List<QueryWithAnswersDTO> searchQueriesByKeyword(String keyword);
     void processFile(MultipartFile file) throws IOException;
+
+    void processFileReader(MultipartFile file) throws IOException;
 }

@@ -16,5 +16,4 @@ public class QueryApplication {
 	@Bean
 	public ModelMapper modelMapper(){return new ModelMapper();}
 
-
 }
