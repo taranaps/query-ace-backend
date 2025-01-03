@@ -8,13 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/v1/queryapplication/admin")
 public class AdminController {
-
     private final AdminService adminService;
 
     @Autowired
@@ -47,11 +45,7 @@ public class AdminController {
     }
 
     @PatchMapping("/edit/{userId}")
-    public ResponseEntity<Users> editUser(@PathVariable Long userId,
-                                          @RequestParam(required = false) String firstName,
-                                          @RequestParam(required = false) String email,
-                                          @RequestParam(required = false) String location,
-                                          @RequestParam(required = false) String username) {
+    public ResponseEntity<Users> editUser(@PathVariable Long userId, @RequestParam(required = false) String firstName, @RequestParam(required = false) String email, @RequestParam(required = false) String location, @RequestParam(required = false) String username) {
         Users updatedUser = adminService.editUser(userId, firstName, email, location, username);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }

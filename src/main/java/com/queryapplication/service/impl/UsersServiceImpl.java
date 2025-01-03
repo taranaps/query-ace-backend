@@ -1,22 +1,29 @@
 package com.queryapplication.service.impl;
 
+import com.queryapplication.dto.UserDTO;
 import com.queryapplication.entity.*;
 import com.queryapplication.repository.RoleRepository;
 import com.queryapplication.repository.UserRepository;
+import com.queryapplication.service.UsersService;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.Set;
 
-public class UsersServiceImpl {
+@Service
+public class UsersServiceImpl implements UsersService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final ModelMapper modelMapper;
 
     @Autowired
-    public UsersServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
+    public UsersServiceImpl(UserRepository userRepository, RoleRepository roleRepository, ModelMapper modelMapper) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.modelMapper = modelMapper;
     }
 
     public Users registerUser(String username, String firstName, String email, String password, LocationName location) {
@@ -44,5 +51,15 @@ public class UsersServiceImpl {
 
     public Optional<Users> findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    public UserDTO login(String email, String password) {
+        Users user = userRepository.findByEmailAndPassword(email, password);
+
+        if (user != null) {
+            return modelMapper.map(user, UserDTO.class);
+        }
+
+        return null;
     }
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 
 @Data
 public class UserDTO {
+    private Long id;
     private String firstName;
     private String username;
     private String email;
