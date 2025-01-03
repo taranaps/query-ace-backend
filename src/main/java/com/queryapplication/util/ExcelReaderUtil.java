@@ -1,8 +1,5 @@
 package com.queryapplication.util;
 
-
-
-
 import com.queryapplication.entity.Answer;
 import com.queryapplication.entity.Query;
 import com.queryapplication.repository.AnswerRepository;
@@ -35,7 +32,6 @@ public class ExcelReaderUtil {
 
         int sheetCount = workbook.getNumberOfSheets();
         if (sheetCount > 0) {
-            // Get the last sheet in the workbook
             Sheet lastSheet = workbook.getSheetAt(sheetCount - 1);
             System.out.println("Processing the last sheet: " + lastSheet.getSheetName());
             processSheet(lastSheet);
@@ -56,11 +52,10 @@ public class ExcelReaderUtil {
                 if (cell != null && cell.getCellType() == CellType.STRING) {
                     String cellValue = cell.getStringCellValue().trim();
                     if (cellValue.endsWith("?")) {
-                        // Found a question
                         String question = cellValue;
                         String answer = combineAnswerParts(row, i + 1, i + 2); // Combine next two columns as answer
                         if (answer.isEmpty()) {
-                            answer = "No answer yet"; // Default answer if none found
+                            answer = "No answer yet";
                         }
                         saveQuestionAndAnswer(question, answer);
                     }

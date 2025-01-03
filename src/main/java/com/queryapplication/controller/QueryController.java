@@ -52,12 +52,25 @@ public class QueryController {
     }
 
 
-    @PostMapping("/{id}/answers")
+    @PostMapping("/id/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{queryId}/answers")
+    public ResponseEntity<List<AnswerResponseDTO>> addAnswersToQuery(
+            @PathVariable Long queryId,
+            @RequestBody List<AnswerRequestDTO> newAnswers) {
+        List<AnswerResponseDTO> response = queryService.addAnswersToQuery(queryId, newAnswers);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<Long>> addBulkQueries(@RequestBody List<BulkQueryDTO> bulkQueries) {
+        List<Long> queryIds = queryService.addBulkQueries(bulkQueries);
+        return ResponseEntity.ok(queryIds);
+    }
 
     @DeleteMapping("/answers/{answerId}")
     public void deleteAnswer(@PathVariable Long answerId) {
@@ -93,8 +106,6 @@ public class QueryController {
         NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
         queryService.editAnswer(answerId, newAnswerDTO);
     }
-
-
 
     @PostMapping("/answers/{answerId}/copy")
     public void copyAnswer(@PathVariable Long answerId) {
@@ -145,6 +156,7 @@ public class QueryController {
         List<QueryWithAnswersDTO> results = queryService.searchQueriesByKeyword(searchRequest.getKeyword());
         return ResponseEntity.ok(results);
     }
+
     @PostMapping("/upload-excel")
     public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file) {
         try {
@@ -161,5 +173,16 @@ public class QueryController {
         }
     }
 
-
+    @PostMapping("/upload-file")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("Please select a file to upload.");
+            }
+            queryService.processFileReader(file);
+            return ResponseEntity.ok("File processed successfully.");
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
+        }
+    }
 }
