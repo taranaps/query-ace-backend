@@ -8,6 +8,8 @@ public interface AdminService {
 
     Iterable<Users> getAllUsers();
 
+    Users getUserByUsername(String username);
+
     Users toggleAdminStatus(Long adminId);
 
     Users getUserDetails(Long userId);

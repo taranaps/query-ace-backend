@@ -31,6 +31,9 @@ public class ActivityLog {
     @Column(name = "action", nullable = false)
     private String action;
 
+    @Column(name = "target", nullable = false)
+    private String target;
+
     @Column(name = "details", columnDefinition = "TEXT")
     private String details;
 

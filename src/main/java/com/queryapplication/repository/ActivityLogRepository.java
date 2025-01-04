@@ -8,4 +8,5 @@ import java.util.List;
 public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {
     List<ActivityLog> findByUserId(Long userId); // Logs for a specific user
     List<ActivityLog> findByActionContaining(String action); // Search logs by action
+    List<ActivityLog> findAllByOrderByCreatedAtDesc();
 }

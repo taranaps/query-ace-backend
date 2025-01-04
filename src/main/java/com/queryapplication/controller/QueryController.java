@@ -2,6 +2,8 @@ package com.queryapplication.controller;
 
 import com.queryapplication.dto.*;
 import com.queryapplication.entity.TagGroup;
+import com.queryapplication.entity.Users;
+import com.queryapplication.service.ActivityLogService; // Import ActivityLogService
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,43 +20,44 @@ public class QueryController {
 
     private final QueryService queryService;
     private final TagService tagService;
+    private final ActivityLogService activityLogService; // Inject ActivityLogService
 
     @Autowired
-    public QueryController(QueryService queryService, TagService tagService) {
+    public QueryController(QueryService queryService, TagService tagService, ActivityLogService activityLogService) {
         this.queryService = queryService;
         this.tagService = tagService;
+        this.activityLogService = activityLogService; // Assign the injected service
     }
 
     @GetMapping
     public List<QueryDTO> getAllQueries() {
-        return queryService.getAllQueries();
+        List<QueryDTO> queries = queryService.getAllQueries();
+        // Log activity for viewing queries
+        activityLogService.logActivity(new Users(), "viewed", "all queries");
+        return queries;
     }
 
     @GetMapping("/{id}")
     public QueryDTO getQueryById(@PathVariable Long id) {
-        return queryService.getQueryById(id);
-    }
-
-    @GetMapping("/with-answers")
-    public List<QueryWithAnswersDTO> getAllQueriesWithAnswers() {
-        return queryService.getAllQueriesWithAnswers();
-    }
-
-    @GetMapping("/{id}/with-answers")
-    public QueryWithAnswersDTO getQueryWithAnswersById(@PathVariable Long id) {
-        return queryService.getQueryWithAnswersById(id);
+        QueryDTO query = queryService.getQueryById(id);
+        // Log activity for viewing a specific query
+        activityLogService.logActivity(new Users(), "viewed", "query with ID " + id);
+        return query;
     }
 
     @PostMapping
     public ResponseEntity<List<Long>> addQueries(@RequestBody List<NewQueryDTO> newQueries) {
         List<Long> queryIds = queryService.addQueries(newQueries);
+        // Log activity for adding queries
+        activityLogService.logActivity(new Users(), "added", "queries with IDs " + queryIds);
         return ResponseEntity.ok(queryIds);
     }
-
 
     @PostMapping("/id/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
+        // Log activity for adding answers
+        activityLogService.logActivity(new Users(), "added", "answers");
         return ResponseEntity.ok(response);
     }
 
@@ -63,29 +66,39 @@ public class QueryController {
             @PathVariable Long queryId,
             @RequestBody List<AnswerRequestDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswersToQuery(queryId, newAnswers);
+        // Log activity for adding answers to a query
+        activityLogService.logActivity(new Users(), "added", "answers to query ID " + queryId);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/bulk")
     public ResponseEntity<List<Long>> addBulkQueries(@RequestBody List<BulkQueryDTO> bulkQueries) {
         List<Long> queryIds = queryService.addBulkQueries(bulkQueries);
+        // Log activity for adding bulk queries
+        activityLogService.logActivity(new Users(), "added", "bulk queries");
         return ResponseEntity.ok(queryIds);
     }
 
     @DeleteMapping("/answers/{answerId}")
     public void deleteAnswer(@PathVariable Long answerId) {
         queryService.deleteAnswer(answerId);
+        // Log activity for deleting an answer
+        activityLogService.logActivity(new Users(), "deleted", "answer with ID " + answerId);
     }
 
     @DeleteMapping("/{queryId}/answers")
     public ResponseEntity<Void> deleteAnswersForQuery(@PathVariable Long queryId) {
         queryService.deleteAllAnswersForQuery(queryId); // Service method to delete all answers for the given query
+        // Log activity for deleting all answers for a query
+        activityLogService.logActivity(new Users(), "deleted", "all answers for query ID " + queryId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{queryId}")
     public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId) {
         queryService.deleteQuery(queryId); // Service method to delete the query and its answers
+        // Log activity for deleting a query
+        activityLogService.logActivity(new Users(), "deleted", "query with ID " + queryId);
         return ResponseEntity.noContent().build();
     }
 
@@ -96,6 +109,8 @@ public class QueryController {
         }
         NewQueryDTO newQueryDTO = newQueryDetails.get(0); // Assuming only one query is passed in the body
         queryService.editQuery(queryId, newQueryDTO);
+        // Log activity for editing a query
+        activityLogService.logActivity(new Users(), "edited", "query with ID " + queryId);
     }
 
     @PatchMapping("/answers/{answerId}")
@@ -105,13 +120,15 @@ public class QueryController {
         }
         NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
         queryService.editAnswer(answerId, newAnswerDTO);
+        // Log activity for editing an answer
+        activityLogService.logActivity(new Users(), "edited", "answer with ID " + answerId);
     }
-
-
 
     @PostMapping("/answers/{answerId}/copy")
     public void copyAnswer(@PathVariable Long answerId) {
         queryService.copyAnswer(answerId);
+        // Log activity for copying an answer
+        activityLogService.logActivity(new Users(), "copied", "answer with ID " + answerId);
     }
 
     // -------------------- Tag-related APIs --------------------
@@ -165,7 +182,6 @@ public class QueryController {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
             }
-
 
             queryService.processFile(file);
 

@@ -1,11 +1,14 @@
 package com.queryapplication.dto;
 
 import com.queryapplication.entity.Users;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ActivityLogDTO {
-    private Long userId;
-    private String action;
-    private String details;
+    private String logDate;
+    private String timestamp;
+    private String logDescription;
 }

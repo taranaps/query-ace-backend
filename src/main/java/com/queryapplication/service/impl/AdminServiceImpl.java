@@ -57,6 +57,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public Users getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Override
     public Users toggleAdminStatus(Long adminId) {
         Users admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
