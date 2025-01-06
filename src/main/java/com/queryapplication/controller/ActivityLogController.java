@@ -28,7 +28,6 @@ public class ActivityLogController {
     public List<ActivityLogDTO> getAllLogs() {
         List<ActivityLog> logs = activityLogRepository.findAllByOrderByCreatedAtDesc();
 
-        // Group logs by date and format them
         return logs.stream()
                 .collect(Collectors.groupingBy(log -> log.getCreatedAt().toLocalDate()))
                 .entrySet().stream()

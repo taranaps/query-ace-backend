@@ -30,7 +30,7 @@ public class ActivityLog {
     @Column(name = "target", columnDefinition = "TEXT")
     private String target;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
 }
