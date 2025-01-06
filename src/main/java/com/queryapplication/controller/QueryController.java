@@ -136,6 +136,25 @@ public class QueryController {
         return ResponseEntity.ok("Tag group created successfully.");
     }
 
+    @PostMapping("/{queryId}/tags/add")
+    public ResponseEntity<String> addTagToQuery(
+            @PathVariable Long queryId,
+            @RequestBody TagDTO tagDTO
+    ) {
+        tagService.addTagToQuery(queryId, tagDTO);
+        return ResponseEntity.ok("Tag added to query successfully.");
+    }
+
+    @DeleteMapping("/{queryId}/tags/{tagId}/remove")
+    public ResponseEntity<String> deleteTagFromQuery(
+            @PathVariable Long queryId,
+            @PathVariable Long tagId
+    ) {
+        tagService.deleteTagFromQuery(queryId, tagId);
+        return ResponseEntity.ok("Tag removed from query successfully.");
+    }
+
+
     @DeleteMapping("/tags/{id}")
     public ResponseEntity<String> deleteTagById(@PathVariable Long id) {
         tagService.deleteTagById(id);

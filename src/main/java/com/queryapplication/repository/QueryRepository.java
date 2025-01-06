@@ -35,4 +35,9 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
             "OR LOWER(tg.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<com.queryapplication.entity.Query> searchQueriesByKeyword(String keyword);
 
+    @Query("SELECT q FROM com.queryapplication.entity.Query q " +
+            "JOIN q.tags t " +
+            "WHERE t = :tag")
+    List<com.queryapplication.entity.Query> findByTag(@Param("tag") com.queryapplication.entity.Tag tag);
+
 }
