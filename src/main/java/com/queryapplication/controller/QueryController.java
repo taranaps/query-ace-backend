@@ -1,13 +1,15 @@
 package com.queryapplication.controller;
 
+import com.queryapplication.constants.ActivityConstants;
 import com.queryapplication.dto.*;
-import com.queryapplication.entity.TagGroup;
 import com.queryapplication.entity.Users;
-import com.queryapplication.service.ActivityLogService; // Import ActivityLogService
+import com.queryapplication.repository.UserRepository;
+import com.queryapplication.service.ActivityLogService;
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,118 +22,181 @@ public class QueryController {
 
     private final QueryService queryService;
     private final TagService tagService;
-    private final ActivityLogService activityLogService; // Inject ActivityLogService
+    private final ActivityLogService activityLogService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public QueryController(QueryService queryService, TagService tagService, ActivityLogService activityLogService) {
+    public QueryController(QueryService queryService,
+                           TagService tagService,
+                           ActivityLogService activityLogService,
+                           UserRepository userRepository) {
         this.queryService = queryService;
         this.tagService = tagService;
-        this.activityLogService = activityLogService; // Assign the injected service
+        this.activityLogService = activityLogService;
+        this.userRepository = userRepository;
+    }
+
+    private Users getAuthenticatedUser(Authentication authentication) {
+        return userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @GetMapping
-    public List<QueryDTO> getAllQueries() {
+    public List<QueryDTO> getAllQueries(Authentication authentication) {
         List<QueryDTO> queries = queryService.getAllQueries();
-        // Log activity for viewing queries
-        activityLogService.logActivity(new Users(), "viewed", "all queries");
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.QUERY_VIEWED,
+                "all queries"
+        );
         return queries;
     }
 
     @GetMapping("/{id}")
-    public QueryDTO getQueryById(@PathVariable Long id) {
+    public QueryDTO getQueryById(@PathVariable Long id, Authentication authentication) {
         QueryDTO query = queryService.getQueryById(id);
-        // Log activity for viewing a specific query
-        activityLogService.logActivity(new Users(), "viewed", "query with ID " + id);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.QUERY_VIEWED,
+                "query ID: " + id
+        );
         return query;
     }
 
     @PostMapping
-    public ResponseEntity<List<Long>> addQueries(@RequestBody List<NewQueryDTO> newQueries) {
+    public ResponseEntity<List<Long>> addQueries(@RequestBody List<NewQueryDTO> newQueries, Authentication authentication) {
         List<Long> queryIds = queryService.addQueries(newQueries);
-        // Log activity for adding queries
-        activityLogService.logActivity(new Users(), "added", "queries with IDs " + queryIds);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.QUERY_ADDED,
+                "queries with IDs: " + queryIds
+        );
         return ResponseEntity.ok(queryIds);
     }
 
     @PostMapping("/id/answers")
-    public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
+    public ResponseEntity<List<AnswerResponseDTO>> addAnswers(
+            @RequestBody List<NewAnswerDTO> newAnswers,
+            Authentication authentication) {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
-        // Log activity for adding answers
-        activityLogService.logActivity(new Users(), "added", "answers");
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.ANSWER_ADDED,
+                "new answers added"
+        );
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{queryId}/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswersToQuery(
             @PathVariable Long queryId,
-            @RequestBody List<AnswerRequestDTO> newAnswers) {
+            @RequestBody List<AnswerRequestDTO> newAnswers,
+            Authentication authentication) {
         List<AnswerResponseDTO> response = queryService.addAnswersToQuery(queryId, newAnswers);
-        // Log activity for adding answers to a query
-        activityLogService.logActivity(new Users(), "added", "answers to query ID " + queryId);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.ANSWER_ADDED,
+                "answers to query ID: " + queryId
+        );
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/bulk")
-    public ResponseEntity<List<Long>> addBulkQueries(@RequestBody List<BulkQueryDTO> bulkQueries) {
+    public ResponseEntity<List<Long>> addBulkQueries(
+            @RequestBody List<BulkQueryDTO> bulkQueries,
+            Authentication authentication) {
         List<Long> queryIds = queryService.addBulkQueries(bulkQueries);
-        // Log activity for adding bulk queries
-        activityLogService.logActivity(new Users(), "added", "bulk queries");
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.QUERY_ADDED,
+                "bulk queries added with IDs: " + queryIds
+        );
         return ResponseEntity.ok(queryIds);
     }
 
     @DeleteMapping("/answers/{answerId}")
-    public void deleteAnswer(@PathVariable Long answerId) {
+    public void deleteAnswer(@PathVariable Long answerId, Authentication authentication) {
         queryService.deleteAnswer(answerId);
-        // Log activity for deleting an answer
-        activityLogService.logActivity(new Users(), "deleted", "answer with ID " + answerId);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.ANSWER_DELETED,
+                "answer ID: " + answerId
+        );
     }
 
     @DeleteMapping("/{queryId}/answers")
-    public ResponseEntity<Void> deleteAnswersForQuery(@PathVariable Long queryId) {
-        queryService.deleteAllAnswersForQuery(queryId); // Service method to delete all answers for the given query
-        // Log activity for deleting all answers for a query
-        activityLogService.logActivity(new Users(), "deleted", "all answers for query ID " + queryId);
+    public ResponseEntity<Void> deleteAnswersForQuery(
+            @PathVariable Long queryId,
+            Authentication authentication) {
+        queryService.deleteAllAnswersForQuery(queryId);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.ANSWER_DELETED,
+                "all answers for query ID: " + queryId
+        );
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{queryId}")
-    public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId) {
-        queryService.deleteQuery(queryId); // Service method to delete the query and its answers
-        // Log activity for deleting a query
-        activityLogService.logActivity(new Users(), "deleted", "query with ID " + queryId);
+    public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId, Authentication authentication) {
+        QueryDTO queryDTO = queryService.getQueryById(queryId);
+        queryService.deleteQuery(queryId);
+
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.QUERY_DELETED,
+                String.format("Query: %s (ID: %d)", queryDTO.getQuestion(), queryId)
+        );
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{queryId}")
-    public void editQuery(@PathVariable Long queryId, @RequestBody List<NewQueryDTO> newQueryDetails) {
+    public void editQuery(
+            @PathVariable Long queryId,
+            @RequestBody List<NewQueryDTO> newQueryDetails,
+            Authentication authentication) {
         if (newQueryDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of queries.");
         }
-        NewQueryDTO newQueryDTO = newQueryDetails.get(0); // Assuming only one query is passed in the body
+        NewQueryDTO newQueryDTO = newQueryDetails.get(0);
+        QueryDTO oldQuery = queryService.getQueryById(queryId);
         queryService.editQuery(queryId, newQueryDTO);
-        // Log activity for editing a query
-        activityLogService.logActivity(new Users(), "edited", "query with ID " + queryId);
+
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.QUERY_EDITED,
+                String.format("Query ID: %d from '%s' to '%s'",
+                        queryId, oldQuery.getQuestion(), newQueryDTO.getQuestion())
+        );
     }
 
     @PatchMapping("/answers/{answerId}")
-    public void editAnswer(@PathVariable Long answerId, @RequestBody List<NewAnswerDTO> newAnswerDetails) {
+    public void editAnswer(
+            @PathVariable Long answerId,
+            @RequestBody List<NewAnswerDTO> newAnswerDetails,
+            Authentication authentication) {
         if (newAnswerDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of answers.");
         }
-        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
+        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0);
         queryService.editAnswer(answerId, newAnswerDTO);
-        // Log activity for editing an answer
-        activityLogService.logActivity(new Users(), "edited", "answer with ID " + answerId);
+
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.ANSWER_EDITED,
+                "answer ID: " + answerId
+        );
     }
 
     @PostMapping("/answers/{answerId}/copy")
-    public void copyAnswer(@PathVariable Long answerId) {
+    public void copyAnswer(@PathVariable Long answerId, Authentication authentication) {
         queryService.copyAnswer(answerId);
-        // Log activity for copying an answer
-        activityLogService.logActivity(new Users(), "copied", "answer with ID " + answerId);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                ActivityConstants.ANSWER_COPIED,
+                "copied answer ID: " + answerId
+        );
     }
-
-    // -------------------- Tag-related APIs --------------------
 
     @GetMapping("/tags/groups")
     public ResponseEntity<List<String>> getAllTagGroups() {
@@ -144,8 +209,16 @@ public class QueryController {
     }
 
     @PostMapping("/tags")
-    public ResponseEntity<TagDTO> addTag(@RequestBody TagDTO tagDTO) {
-        return ResponseEntity.ok(tagService.addTag(tagDTO));
+    public ResponseEntity<TagDTO> addTag(
+            @RequestBody TagDTO tagDTO,
+            Authentication authentication) {
+        TagDTO addedTag = tagService.addTag(tagDTO);
+        activityLogService.logActivity(
+                getAuthenticatedUser(authentication),
+                "added tag",
+                "tag: " + tagDTO.getTagName()
+        );
+        return ResponseEntity.ok(addedTag);
     }
 
     @GetMapping("/tags/search")
@@ -165,26 +238,31 @@ public class QueryController {
             @RequestParam(required = false) List<String> tags,
             @RequestParam(required = false) String tagGroup,
             @RequestParam(required = false) String answer) {
-
         List<QueryWithAnswersDTO> result = queryService.searchQueries(questionText, tags, tagGroup, answer);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<QueryWithAnswersDTO>> searchQueriesByKeyword(@RequestBody SearchRequestDTO searchRequest) {
+    public ResponseEntity<List<QueryWithAnswersDTO>> searchQueriesByKeyword(
+            @RequestBody SearchRequestDTO searchRequest) {
         List<QueryWithAnswersDTO> results = queryService.searchQueriesByKeyword(searchRequest.getKeyword());
         return ResponseEntity.ok(results);
     }
 
     @PostMapping("/upload-excel")
-    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadExcel(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
             }
-
             queryService.processFile(file);
-
+            activityLogService.logActivity(
+                    getAuthenticatedUser(authentication),
+                    "uploaded excel",
+                    "file: " + file.getOriginalFilename()
+            );
             return ResponseEntity.ok("File processed successfully.");
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
@@ -192,12 +270,19 @@ public class QueryController {
     }
 
     @PostMapping("/upload-file")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadFile(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
             }
             queryService.processFileReader(file);
+            activityLogService.logActivity(
+                    getAuthenticatedUser(authentication),
+                    "uploaded file",
+                    "file: " + file.getOriginalFilename()
+            );
             return ResponseEntity.ok("File processed successfully.");
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());

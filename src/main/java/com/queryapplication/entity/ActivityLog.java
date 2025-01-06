@@ -1,6 +1,5 @@
 package com.queryapplication.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,27 +16,21 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ActivityLog {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private Users user;
 
     @Column(name = "action", nullable = false)
     private String action;
 
-    @Column(name = "target", nullable = false)
+    @Column(name = "target", columnDefinition = "TEXT")
     private String target;
 
-    @Column(name = "details", columnDefinition = "TEXT")
-    private String details;
-
-    @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "created_at", updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

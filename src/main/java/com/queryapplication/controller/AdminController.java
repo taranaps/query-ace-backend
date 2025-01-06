@@ -1,6 +1,8 @@
 package com.queryapplication.controller;
 
+import com.queryapplication.constants.ActivityConstants;
 import com.queryapplication.dto.CreateAdminDTO;
+import com.queryapplication.entity.Status;
 import com.queryapplication.entity.Users;
 import com.queryapplication.service.AdminService;
 import com.queryapplication.service.ActivityLogService; // Import the ActivityLogService
@@ -85,5 +87,21 @@ public class AdminController {
         activityLogService.logActivity(user, "Edited user details", "Admin edited user ID: " + userId + " with new details.");
 
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+    @PutMapping("/toggle-status-with-log/{adminId}")
+    public ResponseEntity<Users> logAdminStatusToggle(@PathVariable Long adminId, Authentication authentication) {
+        Users performer = getAuthenticatedUser(authentication);
+        Users updatedAdmin = adminService.toggleAdminStatus(adminId);
+
+        // Log the activity
+        String action = updatedAdmin.getStatus() == Status.ACTIVE ?
+                ActivityConstants.USER_ENABLED : ActivityConstants.USER_DISABLED;
+        activityLogService.logActivity(
+                performer,
+                action,
+                String.format("%s (%s)", updatedAdmin.getFirstName(), updatedAdmin.getEmail())
+        );
+
+        return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
     }
 }
