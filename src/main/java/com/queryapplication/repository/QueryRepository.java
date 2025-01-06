@@ -34,4 +34,5 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
             "OR LOWER(t.tagName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(tg.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<com.queryapplication.entity.Query> searchQueriesByKeyword(String keyword);
+
 }

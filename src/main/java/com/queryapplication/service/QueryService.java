@@ -1,6 +1,7 @@
 package com.queryapplication.service;
 
 import com.queryapplication.dto.*;
+import com.queryapplication.entity.Query;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -33,7 +34,8 @@ public interface QueryService {
     List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer);
 
     List<QueryWithAnswersDTO> searchQueriesByKeyword(String keyword);
-    void processFile(MultipartFile file) throws IOException;
+    void processFile(MultipartFile file, Long userId) throws IOException;
 
     void processFileReader(MultipartFile file) throws IOException;
+
 }

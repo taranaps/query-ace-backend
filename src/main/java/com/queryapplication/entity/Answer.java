@@ -45,6 +45,13 @@ public class Answer {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(name = "copy_count", nullable = false)
+    @JsonIgnore
+    private int copyCount = 0;
+
+    public void incrementCopyCount() {
+        this.copyCount++;
+    }
     public void setUser(Users user) {
     }
 }

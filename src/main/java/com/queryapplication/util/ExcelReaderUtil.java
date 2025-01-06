@@ -1,9 +1,13 @@
 package com.queryapplication.util;
 
+
+
 import com.queryapplication.entity.Answer;
 import com.queryapplication.entity.Query;
+import com.queryapplication.entity.Users;
 import com.queryapplication.repository.AnswerRepository;
 import com.queryapplication.repository.QueryRepository;
+import com.queryapplication.repository.UserRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +23,17 @@ public class ExcelReaderUtil {
 
     private final QueryRepository queryRepository;
     private final AnswerRepository answerRepository;
+    private final UserRepository usersRepository;
 
     @Autowired
-    public ExcelReaderUtil(QueryRepository queryRepository, AnswerRepository answerRepository) {
+    public ExcelReaderUtil(QueryRepository queryRepository, AnswerRepository answerRepository, UserRepository usersRepository) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
+        this.usersRepository = usersRepository;
     }
 
-    public void processExcel(MultipartFile file) throws IOException {
+    // Modify processExcel to accept userId
+    public void processExcel(MultipartFile file, Long userId) throws IOException {
         InputStream inputStream = file.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
 
@@ -34,7 +41,7 @@ public class ExcelReaderUtil {
         if (sheetCount > 0) {
             Sheet lastSheet = workbook.getSheetAt(sheetCount - 1);
             System.out.println("Processing the last sheet: " + lastSheet.getSheetName());
-            processSheet(lastSheet);
+            processSheet(lastSheet, userId);  // Pass userId to processSheet
         } else {
             System.out.println("The workbook has no sheets to process.");
         }
@@ -42,7 +49,7 @@ public class ExcelReaderUtil {
         workbook.close();
     }
 
-    private void processSheet(Sheet sheet) {
+    private void processSheet(Sheet sheet, Long userId) {
         Iterator<Row> rowIterator = sheet.iterator();
 
         while (rowIterator.hasNext()) {
@@ -57,7 +64,7 @@ public class ExcelReaderUtil {
                         if (answer.isEmpty()) {
                             answer = "No answer yet";
                         }
-                        saveQuestionAndAnswer(question, answer);
+                        saveQuestionAndAnswer(question, answer, userId);  // Pass userId to save method
                     }
                 }
             }
@@ -83,14 +90,18 @@ public class ExcelReaderUtil {
         return answer.toString();
     }
 
-    private void saveQuestionAndAnswer(String question, String answer) {
+    private void saveQuestionAndAnswer(String question, String answer, Long userId) {
+        Users user = usersRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
         Query query = new Query();
         query.setQuestion(question);
+        query.setAddedBy(user);  // Set the userId in addedBy field
         query = queryRepository.save(query);
 
         Answer answerEntity = new Answer();
         answerEntity.setAnswer(answer);
         answerEntity.setQuery(query);
+        answerEntity.setAddedBy(user);  // Set the userId in addedBy field
 
         answerRepository.save(answerEntity);
 
