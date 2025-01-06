@@ -55,7 +55,6 @@ public class Query {
     private Set<Tag> tags = new HashSet<>();
 
     @OneToMany(mappedBy = "query", cascade = CascadeType.ALL, targetEntity = Answer.class, orphanRemoval = true)
-    @JsonIgnore
     private Set<Answer> answers = new HashSet<>();
 
 }

@@ -367,17 +367,21 @@ public class QueryServiceImpl implements QueryService {
         answerRepository.save(answer);
     }
 
+
+
     @Override
     public void copyAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
 
-        Answer copy = new Answer();
-        copy.setAnswer(answer.getAnswer());
-        copy.setAddedBy(answer.getAddedBy());
-        copy.setQuery(answer.getQuery());
-        answerRepository.save(copy);
+        // Increment copy count dynamically
+        answer.setCopyCount(answer.getCopyCount() + 1);
+        answerRepository.save(answer); // Save updated answer
     }
+
+
+
+
 
     @Override
     public List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer) {
@@ -432,6 +436,7 @@ public class QueryServiceImpl implements QueryService {
         }
     }
 
-
-
 }
+
+
+
