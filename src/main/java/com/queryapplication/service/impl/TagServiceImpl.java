@@ -38,6 +38,13 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    public void deleteTagById(Long tagId) {
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new IllegalArgumentException("Tag not found with ID: " + tagId));
+        tagRepository.delete(tag);
+    }
+
+    @Override
     public List<TagDTO> getTagsByGroup(String groupName) {
         TagGroup tagGroup = tagGroupRepository.findByName(groupName)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid tag group: " + groupName));
@@ -45,6 +52,13 @@ public class TagServiceImpl implements TagService {
                 .stream()
                 .map(tag -> new TagDTO(tag.getTagName(), tagGroup.getName()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteTagGroup(String groupName) {
+        TagGroup tagGroup = tagGroupRepository.findByName(groupName)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid tag group: " + groupName));
+        tagGroupRepository.delete(tagGroup);
     }
 
     @Override

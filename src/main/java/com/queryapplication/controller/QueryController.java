@@ -118,8 +118,6 @@ public class QueryController {
         return ResponseEntity.ok("Answer copied successfully. Copy count has been updated.");
     }
 
-
-
     // -------------------- Tag-related APIs --------------------
 
     @GetMapping("/tags/groups")
@@ -130,6 +128,24 @@ public class QueryController {
     @GetMapping("/tags/group/{tagGroup}")
     public ResponseEntity<List<TagDTO>> getTagsByGroup(@PathVariable String tagGroup) {
         return ResponseEntity.ok(tagService.getTagsByGroup(tagGroup));
+    }
+
+    @PostMapping("/tags/group")
+    public ResponseEntity<String> createTagGroup(@RequestParam String groupName) {
+        tagService.createTagGroup(groupName);
+        return ResponseEntity.ok("Tag group created successfully.");
+    }
+
+    @DeleteMapping("/tags/{id}")
+    public ResponseEntity<String> deleteTagById(@PathVariable Long id) {
+        tagService.deleteTagById(id);
+        return ResponseEntity.ok("Tag deleted successfully.");
+    }
+
+    @DeleteMapping("/tags/group/{groupName}")
+    public ResponseEntity<String> deleteTagGroup(@PathVariable String groupName) {
+        tagService.deleteTagGroup(groupName);
+        return ResponseEntity.ok("Tag group deleted successfully.");
     }
 
     @PostMapping("/tags")
