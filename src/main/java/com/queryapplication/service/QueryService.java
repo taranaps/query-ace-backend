@@ -1,6 +1,7 @@
 package com.queryapplication.service;
 
 import com.queryapplication.dto.*;
+import com.queryapplication.entity.Query;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -36,4 +37,5 @@ public interface QueryService {
     void processFile(MultipartFile file, Long userId) throws IOException;
 
     void processFileReader(MultipartFile file) throws IOException;
+
 }

@@ -1,10 +1,13 @@
 package com.queryapplication.controller;
 
 import com.queryapplication.dto.*;
+import com.queryapplication.entity.Query;
 import com.queryapplication.entity.TagGroup;
+import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -110,9 +113,12 @@ public class QueryController {
 
 
     @PostMapping("/answers/{answerId}/copy")
-    public void copyAnswer(@PathVariable Long answerId) {
+    public ResponseEntity<String> copyAnswer(@PathVariable Long answerId) {
         queryService.copyAnswer(answerId);
+        return ResponseEntity.ok("Answer copied successfully. Copy count has been updated.");
     }
+
+
 
     // -------------------- Tag-related APIs --------------------
 
