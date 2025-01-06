@@ -309,9 +309,21 @@ public class QueryServiceImpl implements QueryService {
         Query query = queryRepository.findById(queryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Query not found with id " + queryId));
 
+        Set<Tag> tags = new HashSet<>(query.getTags());
+        query.getTags().clear();
+        queryRepository.save(query);
+
         answerRepository.deleteAll(query.getAnswers());
+
+        for (Tag tag : tags) {
+            if (tagRepository.findByTagName(tag.getTagName()).isEmpty()) {
+                tagRepository.delete(tag);
+            }
+        }
+
         queryRepository.delete(query);
     }
+
 
     @Override
     public void editQuery(Long queryId, NewQueryDTO newQueryDTO) {
