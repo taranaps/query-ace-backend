@@ -403,13 +403,13 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
-    public void processFile(MultipartFile file) throws IOException {
+    public void processFile(MultipartFile file, Long userId) throws IOException {
 
         String fileName = file.getOriginalFilename();
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file);
+                excelReaderUtil.processExcel(file,userId);
             } else if (fileName.endsWith(".docx")) {
                 docReaderUtil.processDocFile(file);
             } else {
