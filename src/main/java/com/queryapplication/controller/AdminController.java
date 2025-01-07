@@ -16,10 +16,14 @@ import jakarta.validation.Valid;
 
 import java.util.Map;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 @RestController
 @RequestMapping("/api/v1/queryapplication/admin")
 public class AdminController {
-
     private final AdminService adminService;
     private final ActivityLogService activityLogService; // Declare ActivityLogService
     private final UserRepository userRepository;
@@ -51,6 +55,7 @@ public class AdminController {
 
         return new ResponseEntity<>(newAdmin, HttpStatus.CREATED);
     }
+
     @PutMapping("/toggle-status/{adminId}")
     public ResponseEntity toggleAdminStatus(@PathVariable Long adminId, @RequestBody Map<String, Long> requestData) {
         Long userId = requestData.get("userId"); // Fetch userId from the request body
@@ -99,6 +104,19 @@ public class AdminController {
         );
 
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+    @GetMapping("/users-names")
+    public ResponseEntity<List<String>> getAllUserNames() {
+        try {
+            Iterable<Users> users = adminService.getAllUsers();  // Fetch all users
+            List<String> userNames = StreamSupport.stream(users.spliterator(), false)
+                    .map(Users::getUsername) // Assuming User has a getUsername() method
+                    .collect(Collectors.toList());
+            return new ResponseEntity<>(userNames, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
     }
 
     @PutMapping("/toggle-status-with-log")

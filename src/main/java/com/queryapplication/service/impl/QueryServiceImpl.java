@@ -379,8 +379,6 @@ public class QueryServiceImpl implements QueryService {
         answerRepository.save(answer);
     }
 
-
-
     @Override
     public void copyAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
@@ -390,10 +388,6 @@ public class QueryServiceImpl implements QueryService {
         answer.setCopyCount(answer.getCopyCount() + 1);
         answerRepository.save(answer); // Save updated answer
     }
-
-
-
-
 
     @Override
     public List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer) {

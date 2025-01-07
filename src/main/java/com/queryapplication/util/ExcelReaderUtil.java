@@ -1,7 +1,5 @@
 package com.queryapplication.util;
 
-
-
 import com.queryapplication.entity.Answer;
 import com.queryapplication.entity.Query;
 import com.queryapplication.entity.Users;
@@ -32,21 +30,89 @@ public class ExcelReaderUtil {
         this.usersRepository = usersRepository;
     }
 
-    // Modify processExcel to accept userId
     public void processExcel(MultipartFile file, Long userId) throws IOException {
-        InputStream inputStream = file.getInputStream();
-        Workbook workbook = new XSSFWorkbook(inputStream);
+        try (InputStream inputStream = file.getInputStream(); Workbook workbook = new XSSFWorkbook(inputStream)) {
+            String fileName = file.getOriginalFilename();
 
-        int sheetCount = workbook.getNumberOfSheets();
-        if (sheetCount > 0) {
-            Sheet lastSheet = workbook.getSheetAt(sheetCount - 1);
-            System.out.println("Processing the last sheet: " + lastSheet.getSheetName());
-            processSheet(lastSheet, userId);  // Pass userId to processSheet
-        } else {
-            System.out.println("The workbook has no sheets to process.");
+            if (fileName.startsWith("Bid")) {
+                processBidFile(workbook, userId);
+            } else if (fileName.startsWith("Qualitative")) {
+                processQualitativeFile(workbook, userId);
+            } else if (fileName.startsWith("Vendor")) {
+                processVendorFile(workbook, userId);  // Process Vendor file
+            } else {
+                int sheetCount = workbook.getNumberOfSheets();
+                if (sheetCount > 10) {
+                    processAllSheets(workbook, userId);
+                } else if (sheetCount > 0) {
+                    Sheet lastSheet = workbook.getSheetAt(sheetCount - 1);
+                    processSheet(lastSheet, userId);
+                } else {
+                    System.out.println("The workbook has no sheets to process.");
+                }
+            }
+        }
+    }
+
+    private void processBidFile(Workbook workbook, Long userId) {
+        Sheet sheet = workbook.getSheetAt(0);
+        Iterator<Row> rowIterator = sheet.iterator();
+        rowIterator.next(); // Skip the first row
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+            Cell questionCell = row.getCell(1);
+            String question = questionCell != null && questionCell.getCellType() == CellType.STRING ? questionCell.getStringCellValue().trim() : "";
+            String answer = combineAnswerParts(row, 2, 3);
+            saveQuestionAndAnswer(question, answer, userId);
+        }
+    }
+
+    private void processQualitativeFile(Workbook workbook, Long userId) {
+        Sheet sheet = workbook.getSheetAt(0);
+        Iterator<Row> rowIterator = sheet.iterator();
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+            if (row.getRowNum() >= 2) {
+                Cell questionCell = row.getCell(1);
+                String question = questionCell != null && questionCell.getCellType() == CellType.STRING ? questionCell.getStringCellValue().trim() : "";
+                String answer = combineAnswerParts(row, 2, 3);
+                saveQuestionAndAnswer(question, answer, userId);
+            }
+        }
+    }
+
+    private void processVendorFile(Workbook workbook, Long userId) {
+
+        Sheet sheet = workbook.getSheetAt(1);
+        Iterator<Row> rowIterator = sheet.iterator();
+
+
+        for (int i = 0; i < 13 && rowIterator.hasNext(); i++) {
+            rowIterator.next();
         }
 
-        workbook.close();
+
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+
+            Cell cell = row.getCell(3);
+            if (cell != null && cell.getCellType() == CellType.STRING) {
+                String cellValue = cell.getStringCellValue().trim();
+
+
+                if (cellValue.startsWith("Vendor")) {
+                    String answer = combineAnswerParts(row, 4, 5);
+                    saveQuestionAndAnswer(cellValue, answer, userId);
+                }
+            }
+        }
+    }
+
+    private void processAllSheets(Workbook workbook, Long userId) {
+        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+            Sheet sheet = workbook.getSheetAt(i);
+            processSheet(sheet, userId);
+        }
     }
 
     private void processSheet(Sheet sheet, Long userId) {
@@ -60,11 +126,11 @@ public class ExcelReaderUtil {
                     String cellValue = cell.getStringCellValue().trim();
                     if (cellValue.endsWith("?")) {
                         String question = cellValue;
-                        String answer = combineAnswerParts(row, i + 1, i + 2); // Combine next two columns as answer
+                        String answer = combineAnswerParts(row, i + 1, i + 2);
                         if (answer.isEmpty()) {
                             answer = "No answer yet";
                         }
-                        saveQuestionAndAnswer(question, answer, userId);  // Pass userId to save method
+                        saveQuestionAndAnswer(question, answer, userId);
                     }
                 }
             }
@@ -95,13 +161,13 @@ public class ExcelReaderUtil {
 
         Query query = new Query();
         query.setQuestion(question);
-        query.setAddedBy(user);  // Set the userId in addedBy field
+        query.setAddedBy(user);
         query = queryRepository.save(query);
 
         Answer answerEntity = new Answer();
         answerEntity.setAnswer(answer);
         answerEntity.setQuery(query);
-        answerEntity.setAddedBy(user);  // Set the userId in addedBy field
+        answerEntity.setAddedBy(user);
 
         answerRepository.save(answerEntity);
 

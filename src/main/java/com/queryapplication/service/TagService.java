@@ -10,11 +10,19 @@ public interface TagService {
 
     List<TagDTO> getTagsByGroup(String groupName);
 
+    void addTagToQuery(Long queryId, TagDTO tagDTO);
+
+    void deleteTagFromQuery(Long queryId, Long tagId);
+
+    void createTagGroup(String groupName);
+
+    void deleteTagById(Long tagId);
+
+    void deleteTagGroup(String groupName);
+
     TagDTO addTag(TagDTO tagDTO);
 
     List<TagDTO> searchTags(String tagName);
-
-    void createTagGroup(String groupName);
 
     List<TagGroupDTO> getTagGroups();
 }

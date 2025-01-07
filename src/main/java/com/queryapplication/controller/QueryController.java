@@ -92,6 +92,7 @@ public class QueryController {
         return ResponseEntity.ok(queryIds);
     }
 
+
     @PostMapping("/id/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
@@ -176,6 +177,8 @@ public class QueryController {
         activityLogService.logActivity(user, "edited", "answer ID: " + answerId);
     }
 
+
+
     @PostMapping("/answers/{answerId}/copy")
     public void copyAnswer(@PathVariable Long answerId) {
         QueryDTO query = queryService.getQueryById(answerId);
@@ -184,6 +187,10 @@ public class QueryController {
         queryService.copyAnswer(answerId);
         activityLogService.logActivity(user, "copied", "answer ID: " + answerId);
     }
+
+
+
+    // -------------------- Tag-related APIs --------------------
 
     @GetMapping("/tags/groups")
     public ResponseEntity<List<String>> getAllTagGroups() {
@@ -195,7 +202,42 @@ public class QueryController {
         return ResponseEntity.ok(tagService.getTagsByGroup(tagGroup));
     }
 
+    @PostMapping("/tags/group")
+    public ResponseEntity<String> createTagGroup(@RequestParam String groupName) {
+        tagService.createTagGroup(groupName);
+        return ResponseEntity.ok("Tag group created successfully.");
+    }
 
+    @PostMapping("/{queryId}/tags/add")
+    public ResponseEntity<String> addTagToQuery(
+            @PathVariable Long queryId,
+            @RequestBody TagDTO tagDTO
+    ) {
+        tagService.addTagToQuery(queryId, tagDTO);
+        return ResponseEntity.ok("Tag added to query successfully.");
+    }
+
+    @DeleteMapping("/{queryId}/tags/{tagId}/remove")
+    public ResponseEntity<String> deleteTagFromQuery(
+            @PathVariable Long queryId,
+            @PathVariable Long tagId
+    ) {
+        tagService.deleteTagFromQuery(queryId, tagId);
+        return ResponseEntity.ok("Tag removed from query successfully.");
+    }
+
+
+    @DeleteMapping("/tags/{id}")
+    public ResponseEntity<String> deleteTagById(@PathVariable Long id) {
+        tagService.deleteTagById(id);
+        return ResponseEntity.ok("Tag deleted successfully.");
+    }
+
+    @DeleteMapping("/tags/group/{groupName}")
+    public ResponseEntity<String> deleteTagGroup(@PathVariable String groupName) {
+        tagService.deleteTagGroup(groupName);
+        return ResponseEntity.ok("Tag group deleted successfully.");
+    }
 
     @GetMapping("/tags/search")
     public ResponseEntity<List<TagDTO>> searchTags(@RequestParam String tagName) {
@@ -224,6 +266,7 @@ public class QueryController {
             @RequestParam(required = false) List<String> tags,
             @RequestParam(required = false) String tagGroup,
             @RequestParam(required = false) String answer) {
+
         List<QueryWithAnswersDTO> result = queryService.searchQueries(questionText, tags, tagGroup, answer);
         Users user = userRepository.findById(1L)  // Replace with actual user ID source
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -273,4 +316,12 @@ public class QueryController {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
         }
     }
+
+    @GetMapping("/companies")
+    public ResponseEntity<List<String>> getCompanies() {
+        // Mock data, replace this with a service call if you have a database or logic to fetch companies
+        List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
+        return ResponseEntity.ok(companies);
+    }
+
 }
