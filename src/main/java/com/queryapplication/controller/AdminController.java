@@ -10,6 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 @RestController
 @RequestMapping("/api/v1/queryapplication/admin")
 public class AdminController {
@@ -48,5 +53,18 @@ public class AdminController {
     public ResponseEntity<Users> editUser(@PathVariable Long userId, @RequestParam(required = false) String firstName, @RequestParam(required = false) String email, @RequestParam(required = false) String location, @RequestParam(required = false) String username) {
         Users updatedUser = adminService.editUser(userId, firstName, email, location, username);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+    @GetMapping("/users-names")
+    public ResponseEntity<List<String>> getAllUserNames() {
+        try {
+            Iterable<Users> users = adminService.getAllUsers();  // Fetch all users
+            List<String> userNames = StreamSupport.stream(users.spliterator(), false)
+                    .map(Users::getUsername) // Assuming User has a getUsername() method
+                    .collect(Collectors.toList());
+            return new ResponseEntity<>(userNames, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
     }
 }
