@@ -6,10 +6,8 @@ import lombok.Data;
 
 @Data
 public class LoginDTO {
-
-    @Email(message = "Email should be valid")
-    @NotBlank(message = "Email is required")
-    private String email;
+    @NotBlank(message = "email is required")
+    private String email;  // Changed from email
 
     @NotBlank(message = "Password is required")
     private String password;

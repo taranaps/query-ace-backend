@@ -246,9 +246,11 @@ public class QueryController {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
             }
-            queryService.processFile(file);
-            Users user = userRepository.findById(1L)  // Replace with actual user ID source
+            Users user = userRepository.findById(1L)
                     .orElseThrow(() -> new RuntimeException("User not found"));
+
+            queryService.processFile(file, user.getId());
+
             activityLogService.logActivity(user, "uploaded", "excel file: " + file.getOriginalFilename());
             return ResponseEntity.ok("File processed successfully.");
         } catch (IOException e) {
