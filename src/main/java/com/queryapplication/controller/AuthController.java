@@ -1,12 +1,9 @@
 package com.queryapplication.controller;
 
 import com.queryapplication.dto.SignUpRequest;
-import com.queryapplication.dto.UserDTO;
 import com.queryapplication.entity.Role;
-import com.queryapplication.entity.RoleName;
 import com.queryapplication.entity.Status;
 import com.queryapplication.entity.Users;
-import com.queryapplication.exception.AuthenticationException;
 import com.queryapplication.repository.RoleRepository;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.response.JwtResponse;
@@ -25,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import com.queryapplication.dto.LoginDTO;
 
@@ -34,6 +32,8 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/v1/queryapplication/auth")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "Bearer Authentication")
+
 public class AuthController {
 
     @Autowired
@@ -47,17 +47,14 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
-        // Check if username exists
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity.badRequest().body("Error: Username is already taken!");
         }
 
-        // Check if email exists
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        // Create new user
         Users user = new Users();
         user.setUsername(signUpRequest.getUsername());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
@@ -66,14 +63,12 @@ public class AuthController {
         user.setLocation(signUpRequest.getLocation());
         user.setStatus(Status.ACTIVE);
 
-        // Set role
         Role role = roleRepository.findByRoleName(signUpRequest.getRole())
                 .orElseThrow(() -> new RuntimeException("Error: Role not found."));
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         user.setRoles(roles);
 
-        // Save user
         userRepository.save(user);
 
         return ResponseEntity.ok("User registered successfully");
@@ -82,10 +77,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         try {
-            // Log login attempt
             logger.info("Login attempt for email: {}", loginDTO.getEmail());
 
-            // Perform authentication
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginDTO.getEmail(),
@@ -93,23 +86,18 @@ public class AuthController {
                     )
             );
 
-            // Log successful authentication with username
             logger.debug("Authentication successful for user: {}", authentication.getName());
 
-            // Generate JWT token
             String jwt = jwtTokenProvider.generateToken(authentication);
 
-            // Get user details
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             String role = userPrincipal.getAuthorities().stream()
                     .findFirst()
                     .map(GrantedAuthority::getAuthority)
                     .orElse("");
 
-            // Log successful login with email and role
             logger.info("User logged in successfully: {}, Role: {}", loginDTO.getEmail(), role);
 
-            // Create and return response
             JwtResponse response = new JwtResponse(jwt, "Bearer", role);
             logger.debug("Generated token: {}", jwt);
 
@@ -119,18 +107,11 @@ public class AuthController {
             logger.error("Login failed - Bad credentials for email: {}", loginDTO.getEmail(), e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid email or password");
-        } catch (DisabledException e) {
-            logger.error("Login failed - Account disabled for email: {}", loginDTO.getEmail(), e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Account is disabled");
-        } catch (LockedException e) {
-            logger.error("Login failed - Account locked for email: {}", loginDTO.getEmail(), e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Account is locked");
         } catch (Exception e) {
             logger.error("Login failed - Unexpected error for email: {}", loginDTO.getEmail(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred");
         }
     }
+
 }

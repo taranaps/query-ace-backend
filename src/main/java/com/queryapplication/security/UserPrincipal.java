@@ -7,14 +7,14 @@ import java.util.Collection;
 
 public class UserPrincipal implements UserDetails {
         private Long id;
-        private String username;
+        private String email;
         private String password;
         private Collection<? extends GrantedAuthority> authorities;
 
-        public UserPrincipal(Long id, String username, String password,
+        public UserPrincipal(Long id, String email, String password,
                              Collection<? extends GrantedAuthority> authorities) {
             this.id = id;
-            this.username = username;
+            this.email = email;
             this.password = password;
             this.authorities = authorities;
         }
@@ -31,7 +31,7 @@ public class UserPrincipal implements UserDetails {
 
         @Override
         public String getUsername() {
-            return username;
+            return email;
         }
 
         @Override
