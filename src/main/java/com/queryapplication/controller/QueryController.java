@@ -228,4 +228,12 @@ public class QueryController {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
         }
     }
+
+    @GetMapping("/companies")
+    public ResponseEntity<List<String>> getCompanies() {
+        // Mock data, replace this with a service call if you have a database or logic to fetch companies
+        List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
+        return ResponseEntity.ok(companies);
+    }
+
 }
