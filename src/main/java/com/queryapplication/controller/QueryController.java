@@ -200,29 +200,15 @@ public class QueryController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping("/upload-excel")
-    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file,  @RequestParam("userId") Long userId) {
+    @PostMapping("/upload-file")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,  @RequestParam("userId") Long userId) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
             }
-
 
             queryService.processFile(file, userId);
 
-            return ResponseEntity.ok("File processed successfully.");
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/upload-file")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
-        try {
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body("Please select a file to upload.");
-            }
-            queryService.processFileReader(file);
             return ResponseEntity.ok("File processed successfully.");
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());

@@ -415,27 +415,11 @@ public class QueryServiceImpl implements QueryService {
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file,userId);
+                excelReaderUtil.processExcel(file, userId);
             } else if (fileName.endsWith(".docx")) {
-                docReaderUtil.processDocFile(file);
+                docReaderUtil.processDocFile(file, userId);
             } else {
                 throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
-            }
-        } else {
-            throw new IllegalArgumentException("File name is invalid or null.");
-        }
-    }
-
-    @Override
-    public void processFileReader(MultipartFile file) throws IOException {
-
-        String fileName = file.getOriginalFilename();
-
-        if (fileName != null) {
-            if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                fileReaderUtil.processExcel(file);
-            } else {
-                throw new IllegalArgumentException("Unsupported file format. Only .xlsx is allowed.");
             }
         } else {
             throw new IllegalArgumentException("File name is invalid or null.");
