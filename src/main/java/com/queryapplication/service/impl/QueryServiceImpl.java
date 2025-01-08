@@ -6,9 +6,11 @@ import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.*;
 import com.queryapplication.service.QueryService;
 
+import com.queryapplication.util.CategoryCompanyExcelUtil;
 import com.queryapplication.util.DocReaderUtil;
 import com.queryapplication.util.ExcelReaderUtil;
 import com.queryapplication.util.FileReaderUtil;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,19 +31,20 @@ public class QueryServiceImpl implements QueryService {
     private final TagGroupRepository tagGroupRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-
+    private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
     private final ExcelReaderUtil excelReaderUtil;
     private final DocReaderUtil docReaderUtil;
     private final FileReaderUtil fileReaderUtil;
 
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
         this.tagGroupRepository = tagGroupRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.excelReaderUtil = excelReaderUtil;
         this.docReaderUtil = docReaderUtil;
         this.fileReaderUtil = fileReaderUtil;
@@ -380,6 +383,25 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
+    public List<QueryDTO> filterQueriesByAddedByUsernames(List<String> addedByUsernames) {
+        // Retrieve Users entities based on the provided usernames
+        List<Users> users = userRepository.findByUsernameIn(addedByUsernames);
+        if (users.isEmpty()) {
+            throw new ResourceNotFoundException("No users found for the provided usernames");
+        }
+
+        // Retrieve Queries using the renamed repository method
+        List<Query> queries = queryRepository.findQueriesByAddedByIn(users);
+
+        // Map the Queries to QueryDTO objects
+        return queries.stream()
+                .map(this::mapToQueryDTO)
+                .collect(Collectors.toList());
+    }
+
+
+
+    @Override
     public void copyAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
@@ -429,20 +451,20 @@ public class QueryServiceImpl implements QueryService {
     @Override
     public void processFileReader(MultipartFile file) throws IOException {
 
-        String fileName = file.getOriginalFilename();
+    }
+@Transactional
+    @Override
+    public void processExcel(MultipartFile file) throws IOException {
 
-        if (fileName != null) {
-            if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                fileReaderUtil.processExcel(file);
-            } else {
-                throw new IllegalArgumentException("Unsupported file format. Only .xlsx is allowed.");
-            }
-        } else {
-            throw new IllegalArgumentException("File name is invalid or null.");
-        }
+        categoryCompanyExcelUtil.processExcel(file);
     }
 
+
 }
+
+
+
+
 
 
 

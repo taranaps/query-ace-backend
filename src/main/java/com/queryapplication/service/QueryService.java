@@ -29,6 +29,8 @@ public interface QueryService {
 
     void editAnswer(Long answerId, NewAnswerDTO newAnswerDTO);
 
+    List<QueryDTO> filterQueriesByAddedByUsernames(List<String> addedByUsernames);
+
     void copyAnswer(Long answerId);
 
     List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer);
@@ -38,4 +40,6 @@ public interface QueryService {
 
     void processFileReader(MultipartFile file) throws IOException;
 
+
+    void processExcel(MultipartFile file) throws IOException;;
 }
