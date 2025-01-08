@@ -1,7 +1,9 @@
 package com.queryapplication.service.impl;
 
 import com.queryapplication.dto.CreateAdminDTO;
+import com.queryapplication.dto.UpdateAdminDTO;
 import com.queryapplication.entity.*;
+import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.RoleRepository;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -57,6 +60,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    public Iterable<Users> getAdminUsers() {
+        // Fetch users who have the ADMIN role
+        return userRepository.findByRoleName(RoleName.ADMIN);
+    }
+
+    @Override
     public Users toggleAdminStatus(Long adminId) {
         Users admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
@@ -79,23 +88,21 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public Users editUser(Long userId, String firstName, String email, String location, String username) {
+    public Users editUser(Long userId, UpdateAdminDTO updateAdminDTO) {
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + userId));
 
-        if (firstName != null && !firstName.isEmpty()) {
-            user.setFirstName(firstName);
+        if (updateAdminDTO.getFirstName() != null && !updateAdminDTO.getFirstName().isEmpty()) {
+            user.setFirstName(updateAdminDTO.getFirstName());
         }
-        if (email != null && !email.isEmpty()) {
-            user.setEmail(email);
+        if (updateAdminDTO.getEmail() != null && !updateAdminDTO.getEmail().isEmpty()) {
+            user.setEmail(updateAdminDTO.getEmail());
         }
-        if (location != null && !location.isEmpty()) {
-            user.setLocation(LocationName.valueOf(location));
-        }
-        if (username != null && !username.isEmpty()) {
-            user.setUsername(username);
+        if (updateAdminDTO.getUsername() != null && !updateAdminDTO.getUsername().isEmpty()) {
+            user.setUsername(updateAdminDTO.getUsername());
         }
 
         return userRepository.save(user);
     }
+
 }

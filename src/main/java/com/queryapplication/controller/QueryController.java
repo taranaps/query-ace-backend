@@ -115,6 +115,7 @@ public class QueryController {
     }
 
 
+
     @PostMapping("/answers/{answerId}/copy")
     public ResponseEntity<String> copyAnswer(@PathVariable Long answerId) {
         queryService.copyAnswer(answerId);
@@ -203,8 +204,8 @@ public class QueryController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping("/upload-excel")
-    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
+    @PostMapping("/upload-file")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,  @RequestParam("userId") Long userId) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
@@ -227,7 +228,7 @@ public class QueryController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
         }
-        }
+    }
 
     @GetMapping("/companies")
     public ResponseEntity<List<String>> getCompanies() {

@@ -34,10 +34,9 @@ public class QueryServiceImpl implements QueryService {
     private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
     private final ExcelReaderUtil excelReaderUtil;
     private final DocReaderUtil docReaderUtil;
-    private final FileReaderUtil fileReaderUtil;
 
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
@@ -47,7 +46,6 @@ public class QueryServiceImpl implements QueryService {
         this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.excelReaderUtil = excelReaderUtil;
         this.docReaderUtil = docReaderUtil;
-        this.fileReaderUtil = fileReaderUtil;
     }
 
     @Override
@@ -437,9 +435,9 @@ public class QueryServiceImpl implements QueryService {
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file,userId);
+                excelReaderUtil.processExcel(file, userId);
             } else if (fileName.endsWith(".docx")) {
-                docReaderUtil.processDocFile(file);
+                docReaderUtil.processDocFile(file, userId);
             } else {
                 throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
             }
@@ -448,11 +446,7 @@ public class QueryServiceImpl implements QueryService {
         }
     }
 
-    @Override
-    public void processFileReader(MultipartFile file) throws IOException {
-
-    }
-@Transactional
+    @Transactional
     @Override
     public void processExcel(MultipartFile file) throws IOException {
 
@@ -461,10 +455,6 @@ public class QueryServiceImpl implements QueryService {
 
 
 }
-
-
-
-
 
 
 
