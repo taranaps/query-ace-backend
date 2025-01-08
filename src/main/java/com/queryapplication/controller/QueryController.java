@@ -110,8 +110,6 @@ public class QueryController {
         queryService.editAnswer(answerId, newAnswerDTO);
     }
 
-
-
     @PostMapping("/answers/{answerId}/copy")
     public ResponseEntity<String> copyAnswer(@PathVariable Long answerId) {
         queryService.copyAnswer(answerId);
