@@ -1,14 +1,15 @@
 package com.queryapplication.dto;
 
-import com.queryapplication.entity.Users;
-import lombok.*;
+import lombok.Data;
+import java.time.LocalTime;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 public class ActivityLogDTO {
-    private String logDate;
-    private String timestamp;
-    private String logDescription;
+    private String time;
+    private String description;
+
+    public ActivityLogDTO(LocalTime time, String description) {
+        this.time = time.toString();
+        this.description = description;
+    }
 }

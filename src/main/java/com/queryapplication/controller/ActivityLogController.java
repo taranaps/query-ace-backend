@@ -1,42 +1,46 @@
 package com.queryapplication.controller;
 
+import com.queryapplication.dto.DateGroupedLogsDTO;
 import com.queryapplication.dto.ActivityLogDTO;
+import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.service.ActivityLogService;
-import com.queryapplication.entity.ActivityLog;
-import com.queryapplication.repository.ActivityLogRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import com.queryapplication.response.ErrorResponse;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/activity-logs")
+@RequestMapping("/api/v1/queryapplication/logs")
+@RequiredArgsConstructor
+@SecurityRequirement(name = "Bearer Authentication")
 public class ActivityLogController {
 
-    @Autowired
-    private ActivityLogRepository activityLogRepository;
+    private final ActivityLogService activityLogService;
 
-    @Autowired
-    private ActivityLogService activityLogService;
+    @GetMapping
+    public ResponseEntity<?> getLogs(@RequestParam(defaultValue = "0") int page) {
+        try {
+            List<DateGroupedLogsDTO> logs = activityLogService.getAllLogs(page);
+            return ResponseEntity.ok(logs);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Error accessing activity logs. Please try again later"));
+        }
+    }
 
-    @GetMapping("/all")
-    public List<ActivityLogDTO> getAllLogs() {
-        List<ActivityLog> logs = activityLogRepository.findAllByOrderByCreatedAtDesc();
-
-        return logs.stream()
-                .collect(Collectors.groupingBy(log -> log.getCreatedAt().toLocalDate()))
-                .entrySet().stream()
-                .flatMap(entry -> entry.getValue().stream()
-                        .map(log -> new ActivityLogDTO(
-                                entry.getKey().format(DateTimeFormatter.ISO_DATE), // Log Date
-                                log.getCreatedAt().toLocalTime().toString(), // Timestamp
-                                String.format("%s %s %s", log.getUser().getFirstName(), log.getAction(), log.getTarget()) // Log description
-                        )))
-                .collect(Collectors.toList());
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<DateGroupedLogsDTO>> getUserLogs(
+          @PathVariable Long userId,
+          @RequestParam(defaultValue = "0") int page) {
+        return ResponseEntity.ok(activityLogService.getUserLogs(userId, page));
     }
 }

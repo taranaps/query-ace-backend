@@ -1,36 +1,32 @@
 package com.queryapplication.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "activity_logs")
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
 public class ActivityLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private Users user;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "performed_by_user_id", nullable = false)
+    private Users performedByUser;
 
-    @Column(name = "action", nullable = false)
+    @Column(nullable = false)
     private String action;
 
-    @Column(name = "target", columnDefinition = "TEXT")
-    private String target;
+    @Column(nullable = false)
+    private String description;
 
-    @Column(name = "created_at")
     @CreationTimestamp
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 }

@@ -2,11 +2,13 @@ package com.queryapplication.repository;
 
 import com.queryapplication.entity.ActivityLog;
 import org.springframework.data.jpa.repository.JpaRepository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 
+@Repository
 public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {
-    List<ActivityLog> findByUserId(Long userId); // Logs for a specific user
-    List<ActivityLog> findByActionContaining(String action); // Search logs by action
-    List<ActivityLog> findAllByOrderByCreatedAtDesc();
+    @Query("SELECT a FROM ActivityLog a WHERE a.performedByUser IS NOT NULL ORDER BY a.createdAt DESC")
+    List<ActivityLog> findAllValidLogsOrderByCreatedAtDesc();
+    List<ActivityLog> findByPerformedByUserIdOrderByCreatedAtDesc(Long userId);
 }

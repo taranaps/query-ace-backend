@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers("/api/v1/queryapplication/admin/**").hasAuthority("SUPER_ADMIN")
+                        .requestMatchers("/api/v1/queryapplication/logs/**","/api/v1/queryapplication/logs").authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(

@@ -7,6 +7,7 @@ import com.queryapplication.entity.Users;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
 import com.queryapplication.service.ActivityLogService; // Import the ActivityLogService
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import java.util.stream.StreamSupport;
 
 @RestController
 @RequestMapping("/api/v1/queryapplication/admin")
+@SecurityRequirement(name = "Bearer Authentication")
 public class AdminController {
     private final AdminService adminService;
     private final ActivityLogService activityLogService; // Declare ActivityLogService
@@ -51,7 +53,7 @@ public class AdminController {
         Users newAdmin = adminService.createAdmin(createAdminDTO);
 
         // Log activity
-        activityLogService.logActivity(newAdmin, "Created new admin", "Admin created a new admin with username: " + newAdmin.getUsername());
+        activityLogService.logActivity( "Created new admin", "Admin created a new admin with username: " + newAdmin.getUsername());
 
         return new ResponseEntity<>(newAdmin, HttpStatus.CREATED);
     }
@@ -65,7 +67,7 @@ public class AdminController {
 
         Users updatedAdmin = adminService.toggleAdminStatus(adminId);
 
-        activityLogService.logActivity(user, "Toggled admin status", "Admin toggled the status for admin ID: " + adminId);
+        activityLogService.logActivity("Toggled admin status", "Admin toggled the status for admin ID: " + adminId);
 
         return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
     }
@@ -78,7 +80,7 @@ public class AdminController {
         Users adminUser = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
 
-        activityLogService.logActivity(adminUser, "Fetched user details", "Admin viewed the details for user ID: " + userId);
+        activityLogService.logActivity( "Fetched user details", "Admin viewed the details for user ID: " + userId);
 
         return new ResponseEntity<>(userDetails, HttpStatus.OK);
     }
@@ -98,7 +100,7 @@ public class AdminController {
         Users updatedUser = adminService.editUser(userId, firstName, email, location, username);
 
         activityLogService.logActivity(
-                user,
+
                 "Edited user details",
                 String.format("Admin edited user ID: %d with new details.", userId)
         );
@@ -132,7 +134,7 @@ public class AdminController {
         String action = updatedAdmin.getStatus() == Status.ACTIVE ?
                 ActivityConstants.USER_ENABLED : ActivityConstants.USER_DISABLED;
         activityLogService.logActivity(
-                performer,
+
                 action,
                 String.format("%s (%s)", updatedAdmin.getFirstName(), updatedAdmin.getEmail())
         );

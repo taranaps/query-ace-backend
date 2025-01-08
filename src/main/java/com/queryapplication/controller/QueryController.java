@@ -8,6 +8,7 @@ import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
 import com.queryapplication.service.ActivityLogService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/queryapplication/queries")
+@SecurityRequirement(name = "Bearer Authentication")
+
 public class QueryController {
 
     private final QueryService queryService;
@@ -33,23 +36,13 @@ public class QueryController {
         this.userRepository = userRepository;
     }
 
-    @GetMapping("/activity-logs")
-    public ResponseEntity<List<ActivityLogDTO>> getActivityLogs() {
-        return ResponseEntity.ok(activityLogService.getAllLogs());
-    }
-
-    @GetMapping("/activity-logs/user/{userId}")
-    public ResponseEntity<List<ActivityLogDTO>> getUserActivityLogs(@PathVariable Long userId) {
-        return ResponseEntity.ok(activityLogService.getLogsByUser(userId));
-    }
-
     @GetMapping
     public List<QueryDTO> getAllQueries() {
         List<QueryDTO> queries = queryService.getAllQueries();
         if (!queries.isEmpty()) {
             Users user = userRepository.findById(queries.get(0).getUsersId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            activityLogService.logActivity(user, "viewed", "all queries");
+            activityLogService.logActivity( "viewed", "all queries");
         }
         return queries;
     }
@@ -59,7 +52,7 @@ public class QueryController {
         QueryDTO query = queryService.getQueryById(id);
         Users user = userRepository.findById(query.getUsersId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "viewed", "query ID: " + id);
+        activityLogService.logActivity("viewed", "query ID: " + id);
         return query;
     }
 
@@ -69,7 +62,7 @@ public class QueryController {
         if (!queries.isEmpty()) {
             Users user = userRepository.findById(queries.get(0).getUsersId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            activityLogService.logActivity(user, "viewed", "all queries with answers");
+            activityLogService.logActivity( "viewed", "all queries with answers");
         }
         return queries;
     }
@@ -79,7 +72,7 @@ public class QueryController {
         QueryWithAnswersDTO query = queryService.getQueryWithAnswersById(id);
         Users user = userRepository.findById(query.getUsersId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "viewed", "query with answers ID: " + id);
+        activityLogService.logActivity("viewed", "query with answers ID: " + id);
         return query;
     }
 
@@ -88,7 +81,7 @@ public class QueryController {
         List<Long> queryIds = queryService.addQueries(newQueries);
         Users user = userRepository.findById(newQueries.get(0).getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "added", "queries with IDs: " + queryIds);
+        activityLogService.logActivity( "added", "queries with IDs: " + queryIds);
         return ResponseEntity.ok(queryIds);
     }
 
@@ -98,7 +91,7 @@ public class QueryController {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);
         Users user = userRepository.findById(newAnswers.get(0).getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "added", "new answers");
+        activityLogService.logActivity("added", "new answers");
         return ResponseEntity.ok(response);
     }
 
@@ -109,7 +102,7 @@ public class QueryController {
         List<AnswerResponseDTO> response = queryService.addAnswersToQuery(queryId, newAnswers);
         Users user = userRepository.findById(newAnswers.get(0).getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "added", "answers to query ID: " + queryId);
+        activityLogService.logActivity("added", "answers to query ID: " + queryId);
         return ResponseEntity.ok(response);
     }
 
@@ -118,7 +111,7 @@ public class QueryController {
         List<Long> queryIds = queryService.addBulkQueries(bulkQueries);
         Users user = userRepository.findById(bulkQueries.get(0).getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "added", "bulk queries with IDs: " + queryIds);
+        activityLogService.logActivity( "added", "bulk queries with IDs: " + queryIds);
         return ResponseEntity.ok(queryIds);
     }
 
@@ -128,7 +121,7 @@ public class QueryController {
         Users user = userRepository.findById(query.getUsersId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         queryService.deleteAnswer(answerId);
-        activityLogService.logActivity(user, "deleted", "answer ID: " + answerId);
+        activityLogService.logActivity("deleted", "answer ID: " + answerId);
     }
 
     @DeleteMapping("/{queryId}/answers")
@@ -137,7 +130,7 @@ public class QueryController {
         Users user = userRepository.findById(query.getUsersId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         queryService.deleteAllAnswersForQuery(queryId);
-        activityLogService.logActivity(user, "deleted", "all answers for query ID: " + queryId);
+        activityLogService.logActivity("deleted", "all answers of query ID: " + queryId);
         return ResponseEntity.noContent().build();
     }
 
@@ -147,7 +140,7 @@ public class QueryController {
         Users user = userRepository.findById(query.getUsersId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         queryService.deleteQuery(queryId);
-        activityLogService.logActivity(user, "deleted", "query ID: " + queryId);
+        activityLogService.logActivity("deleted", "query ID: " + queryId);
         return ResponseEntity.noContent().build();
     }
 
@@ -161,7 +154,7 @@ public class QueryController {
         Users user = userRepository.findById(newQueryDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         queryService.editQuery(queryId, newQueryDTO);
-        activityLogService.logActivity(user, "edited", String.format("query ID: %d from '%s' to '%s'",
+        activityLogService.logActivity( "edited", String.format("query ID: %d from '%s' to '%s'",
                 queryId, oldQuery.getQuestion(), newQueryDTO.getQuestion()));
     }
 
@@ -174,7 +167,7 @@ public class QueryController {
         Users user = userRepository.findById(newAnswerDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         queryService.editAnswer(answerId, newAnswerDTO);
-        activityLogService.logActivity(user, "edited", "answer ID: " + answerId);
+        activityLogService.logActivity( "edited", "answer ID: " + answerId);
     }
 
 
@@ -185,7 +178,7 @@ public class QueryController {
         Users user = userRepository.findById(query.getUsersId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         queryService.copyAnswer(answerId);
-        activityLogService.logActivity(user, "copied", "answer ID: " + answerId);
+        activityLogService.logActivity( "copied", "answer ID: " + answerId);
     }
 
 
@@ -256,7 +249,7 @@ public class QueryController {
         // Need to get user info from tagDTO or another source
         Users user = userRepository.findById(1L)  // Replace with actual user ID source
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "added", "tag: " + tagDTO.getTagName());
+        activityLogService.logActivity( "added", "tag: " + tagDTO.getTagName());
         return ResponseEntity.ok(addedTag);
     }
 
@@ -270,7 +263,7 @@ public class QueryController {
         List<QueryWithAnswersDTO> result = queryService.searchQueries(questionText, tags, tagGroup, answer);
         Users user = userRepository.findById(1L)  // Replace with actual user ID source
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "searched", "queries with criteria");
+        activityLogService.logActivity( "searched", "queries with criteria");
         return ResponseEntity.ok(result);
     }
 
@@ -279,7 +272,7 @@ public class QueryController {
         List<QueryWithAnswersDTO> results = queryService.searchQueriesByKeyword(searchRequest.getKeyword());
         Users user = userRepository.findById(1L)  // Replace with actual user ID source
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity(user, "searched", "queries with keyword: " + searchRequest.getKeyword());
+        activityLogService.logActivity( "searched", "queries with keyword: " + searchRequest.getKeyword());
         return ResponseEntity.ok(results);
     }
 
@@ -294,7 +287,7 @@ public class QueryController {
 
             queryService.processFile(file, user.getId());
 
-            activityLogService.logActivity(user, "uploaded", "excel file: " + file.getOriginalFilename());
+            activityLogService.logActivity( "uploaded", "excel file: " + file.getOriginalFilename());
             return ResponseEntity.ok("File processed successfully.");
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
@@ -310,7 +303,7 @@ public class QueryController {
             queryService.processFileReader(file);
             Users user = userRepository.findById(1L)  // Replace with actual user ID source
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            activityLogService.logActivity(user, "uploaded", "file: " + file.getOriginalFilename());
+            activityLogService.logActivity( "uploaded", "file: " + file.getOriginalFilename());
             return ResponseEntity.ok("File processed successfully.");
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());

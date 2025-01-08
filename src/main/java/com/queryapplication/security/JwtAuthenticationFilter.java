@@ -36,9 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            logger.info("Processing JWT token");
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                logger.info("Token is valid");
                 String username = tokenProvider.getUsernameFromToken(jwt);
+
                 Claims claims = tokenProvider.getClaimsFromToken(jwt);
                 String roles = claims.get("roles", String.class);
 
@@ -47,21 +50,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                logger.info("User details loaded");
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.info("Authentication completed");
             }
         } catch (Exception ex) {
-            logger.error("Could not set user authentication in security context", ex);
+            logger.error("Authentication error occurred: " + ex.getMessage());
         }
 
         filterChain.doFilter(request, response);
     }
-
-
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
