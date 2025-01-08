@@ -6,6 +6,7 @@ import com.queryapplication.entity.TagGroup;
 import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
+import com.queryapplication.util.CategoryCompanyExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,14 @@ public class QueryController {
 
     private final QueryService queryService;
     private final TagService tagService;
+    private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
+
 
     @Autowired
-    public QueryController(QueryService queryService, TagService tagService) {
+    public QueryController(QueryService queryService, TagService tagService, CategoryCompanyExcelUtil categoryCompanyExcelUtil) {
         this.queryService = queryService;
         this.tagService = tagService;
+        this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
     }
 
     @GetMapping
@@ -109,7 +113,6 @@ public class QueryController {
         NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
         queryService.editAnswer(answerId, newAnswerDTO);
     }
-
 
 
     @PostMapping("/answers/{answerId}/copy")
@@ -201,7 +204,7 @@ public class QueryController {
     }
 
     @PostMapping("/upload-excel")
-    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file,  @RequestParam("userId") Long userId) {
+    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
@@ -216,24 +219,27 @@ public class QueryController {
         }
     }
 
-    @PostMapping("/upload-file")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file) {
         try {
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body("Please select a file to upload.");
-            }
-            queryService.processFileReader(file);
-            return ResponseEntity.ok("File processed successfully.");
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
+            queryService.processExcel(file);
+            return ResponseEntity.ok("File uploaded and processed successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
         }
-    }
+        }
 
     @GetMapping("/companies")
     public ResponseEntity<List<String>> getCompanies() {
-        // Mock data, replace this with a service call if you have a database or logic to fetch companies
+
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
+    }
+    @GetMapping("/filter")
+    public ResponseEntity<List<QueryDTO>> filterQueriesByAddedByUsernames(
+            @RequestParam List<String> addedByUsernames) {
+        List<QueryDTO> filteredQueries = queryService.filterQueriesByAddedByUsernames(addedByUsernames);
+        return ResponseEntity.ok(filteredQueries);
     }
 
 }
