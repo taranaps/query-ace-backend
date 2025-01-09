@@ -44,10 +44,7 @@ public interface QueryService {
 
     void processFile(MultipartFile file, Long userId) throws IOException;
 
-    void processExcel(MultipartFile file) throws IOException;
-
-    ;
-
     List<QueryWithAnswersDTO> searchQueriesUsingFilters(List<String> usersUsernames, List<String> tags);
 
+    void processExcel(MultipartFile file, Long userId) throws IOException;;
 }

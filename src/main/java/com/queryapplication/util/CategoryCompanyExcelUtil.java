@@ -1,160 +1,160 @@
 package com.queryapplication.util;
 
-
 import com.queryapplication.entity.*;
 import com.queryapplication.repository.*;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-
 @Component
 public class CategoryCompanyExcelUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(CategoryCompanyExcelUtil.class);
 
     private final QueryRepository queryRepository;
     private final AnswerRepository answerRepository;
     private final TagGroupRepository tagGroupRepository;
     private final TagRepository tagRepository;
-
+    private final UserRepository usersRepository;
 
     @Autowired
     public CategoryCompanyExcelUtil(QueryRepository queryRepository, AnswerRepository answerRepository,
-                          TagGroupRepository tagGroupRepository, TagRepository tagRepository) {
+                                    TagGroupRepository tagGroupRepository, TagRepository tagRepository, UserRepository usersRepository) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagGroupRepository = tagGroupRepository;
         this.tagRepository = tagRepository;
+        this.usersRepository = usersRepository;
     }
 
-
-    public void processExcel(MultipartFile file) throws IOException {
+    public void processExcel(MultipartFile file, Long userId) throws IOException {
+        logger.info("Starting processExcel method");
         InputStream inputStream = file.getInputStream();
         Workbook workbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = workbook.getSheetAt(0); // Assuming data is on the first sheet
-
+        Sheet sheet = workbook.getSheetAt(0);
 
         Map<String, Query> queryMap = new HashMap<>();
         Map<Integer, String> tagGroupMap = new HashMap<>();
 
-
-        // Read header row for tag group names
         Row headerRow = sheet.getRow(0);
         for (int colIndex = 2; colIndex < headerRow.getLastCellNum(); colIndex++) {
             Cell headerCell = headerRow.getCell(colIndex);
             if (headerCell != null && headerCell.getCellType() == CellType.STRING) {
                 tagGroupMap.put(colIndex, headerCell.getStringCellValue().trim());
+                logger.info("Tag group detected: {}", headerCell.getStringCellValue().trim());
             }
         }
 
 
-        // Step 1: Handle answers and save queries
-        for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) { // Skip the header row
-            Row row = sheet.getRow(rowIndex);
-            if (row == null) continue;
-
-
-            // Handle answers first for this row
-            handleAnswers(sheet, rowIndex, queryMap);
-        }
-
-
-        // Step 2: Process tags after all queries and answers are saved
         for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
-            if (row == null) continue;
-
-
-            // Process tags for the current question
-            processTags(sheet, row, tagGroupMap, queryMap);
-        }
-
-
-        workbook.close();
-    }
-
-
-    private void handleAnswers(Sheet sheet, int rowIndex, Map<String, Query> queryMap) {
-        Row row = sheet.getRow(rowIndex);
-        if (row == null) return;
-
-
-        // Answer is located in the second column (index 1)
-        Cell answerCell = row.getCell(1); // Answer cell
-        if (answerCell != null && answerCell.getCellType() == CellType.STRING) {
-            String answer = answerCell.getStringCellValue().trim();
-            if (!answer.isEmpty()) {
-                // Get or create the corresponding query for this answer
-                String question = row.getCell(0).getStringCellValue().trim();
-                Query query = queryMap.computeIfAbsent(question, this::saveQuery);
-
-
-                // Save the answer
-                saveAnswer(query, answer);
+            if (row != null) {
+                Cell questionCell = row.getCell(0);
+                if (questionCell != null && questionCell.getCellType() == CellType.STRING) {
+                    String question = questionCell.getStringCellValue().trim();
+                    if (!question.isEmpty()) {
+                        queryMap.computeIfAbsent(question, q -> saveQuery(q, userId));
+                        logger.info("Saved question: {}", question);
+                    }
+                }
             }
         }
+
+
+        for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row != null) {
+                handleAnswers(row, queryMap, userId);
+            }
+        }
+
+
+        for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row != null) {
+                processTags(row, tagGroupMap, queryMap);
+            }
+        }
+
+        workbook.close();
+        logger.info("Excel processing completed successfully");
     }
 
+    private void handleAnswers(Row row, Map<String, Query> queryMap, Long userId) {
+        Cell questionCell = row.getCell(0);
+        Cell answerCell = row.getCell(1);
 
-    private void processTags(Sheet sheet, Row row, Map<Integer, String> tagGroupMap, Map<String, Query> queryMap) {
-        // Iterate through the tag columns and save each tag for the current question
-        for (Map.Entry<Integer, String> entry : tagGroupMap.entrySet()) {
-            int colIndex = entry.getKey();
-            String tagGroupName = entry.getValue();
-            TagGroup tagGroup = getOrCreateTagGroup(tagGroupName);
+        if (questionCell != null && questionCell.getCellType() == CellType.STRING) {
+            String question = questionCell.getStringCellValue().trim();
+            if (!question.isEmpty()) {
+                Query query = queryMap.get(question);
 
-
-            // Process tags if there is a corresponding value
-            Cell tagCell = row.getCell(colIndex);
-            if (tagCell != null && tagCell.getCellType() == CellType.STRING) {
-                String tagName = tagCell.getStringCellValue().trim();
-                if (!tagName.isEmpty()) {
-                    String question = row.getCell(0).getStringCellValue().trim();
-                    Query query = queryMap.get(question); // Get the query associated with the question
-                    if (query != null) {
-                        saveTag(query, tagGroup, tagName);
+                if (answerCell != null && answerCell.getCellType() == CellType.STRING) {
+                    String answer = answerCell.getStringCellValue().trim();
+                    if (!answer.isEmpty()) {
+                        saveAnswer(query, answer, userId);
+                        logger.info("Saved answer '{}' for question '{}'.", answer, question);
                     }
                 }
             }
         }
     }
 
+    private void processTags(Row row, Map<Integer, String> tagGroupMap, Map<String, Query> queryMap) {
+        Cell questionCell = row.getCell(0);
+        if (questionCell != null && questionCell.getCellType() == CellType.STRING) {
+            String question = questionCell.getStringCellValue().trim();
+            if (!question.isEmpty()) {
+                Query query = queryMap.get(question);
+                if (query != null) {
+                    for (Map.Entry<Integer, String> entry : tagGroupMap.entrySet()) {
+                        int colIndex = entry.getKey();
+                        String tagGroupName = entry.getValue();
+                        TagGroup tagGroup = getOrCreateTagGroup(tagGroupName);
 
-    private boolean isMergedRegion(Sheet sheet, int rowIndex, int colIndex) {
-        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
-            CellRangeAddress region = sheet.getMergedRegion(i);
-            if (region.isInRange(rowIndex, colIndex)) {
-                return true;
+                        Cell tagCell = row.getCell(colIndex);
+                        if (tagCell != null && tagCell.getCellType() == CellType.STRING) {
+                            String tagName = tagCell.getStringCellValue().trim();
+                            if (!tagName.isEmpty()) {
+                                saveTag(query, tagGroup, tagName);
+                                logger.info("Saved tag '{}' under group '{}' for question '{}'.", tagName, tagGroupName, question);
+                            }
+                        }
+                    }
+                }
             }
         }
-        return false;
     }
 
-
-    private Query saveQuery(String question) {
+    private Query saveQuery(String question, Long userId) {
+        logger.debug("Saving new query: {}", question);
+        Users user = usersRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         Query query = new Query();
         query.setQuestion(question);
+        query.setAddedBy(user);
         return queryRepository.save(query);
     }
 
-
-    private void saveAnswer(Query query, String answerText) {
+    private void saveAnswer(Query query, String answerText, Long userId) {
+        logger.debug("Saving answer for query '{}': {}", query.getQuestion(), answerText);
+        Users user = usersRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         Answer answer = new Answer();
         answer.setQuery(query);
         answer.setAnswer(answerText);
+        answer.setAddedBy(user);
         answerRepository.save(answer);
     }
 
-
     private TagGroup getOrCreateTagGroup(String tagGroupName) {
+        logger.debug("Fetching or creating tag group: {}", tagGroupName);
         return tagGroupRepository.findByName(tagGroupName)
                 .orElseGet(() -> {
                     TagGroup tagGroup = new TagGroup();
@@ -163,8 +163,8 @@ public class CategoryCompanyExcelUtil {
                 });
     }
 
-
     private void saveTag(Query query, TagGroup tagGroup, String tagName) {
+        logger.debug("Saving tag '{}' under group '{}' for question '{}'.", tagName, tagGroup.getName(), query.getQuestion());
         Tag tag = tagRepository.findByTagNameAndTagGroup(tagName, tagGroup)
                 .orElseGet(() -> {
                     Tag newTag = new Tag();

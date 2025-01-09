@@ -17,9 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,7 +31,8 @@ public class QueryServiceImpl implements QueryService {
     private final ModelMapper modelMapper;
     private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
     private final ExcelReaderUtil excelReaderUtil;
-    private final DocReaderUtil docReaderUtil;
+
+
 
     @Autowired
     public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil) {
@@ -45,7 +44,7 @@ public class QueryServiceImpl implements QueryService {
         this.modelMapper = modelMapper;
         this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.excelReaderUtil = excelReaderUtil;
-        this.docReaderUtil = docReaderUtil;
+
     }
 
     @Override
@@ -108,7 +107,6 @@ public class QueryServiceImpl implements QueryService {
         dto.setUsersUsername(query.getAddedBy().getUsername());
         dto.setFirstName(query.getAddedBy().getFirstName());
         dto.setEmail(query.getAddedBy().getEmail());
-
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleRoleName(role != null ? role.getRoleName() : null);
 
@@ -127,7 +125,7 @@ public class QueryServiceImpl implements QueryService {
                     answerDTO.setAnswer(answer.getAnswer());
                     answerDTO.setCreatedAt(answer.getCreatedAt());
                     answerDTO.setUpdatedAt(answer.getUpdatedAt());
-
+                    answerDTO.setCopyCount(answer.getCopyCount());
                     Users addedBy = answer.getAddedBy();
                     if (addedBy != null) {
                         answerDTO.setUsersUsername(addedBy.getUsername());
@@ -416,6 +414,8 @@ public class QueryServiceImpl implements QueryService {
         return queries.stream()
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
+
+
     }
 
     @Override
@@ -423,7 +423,23 @@ public class QueryServiceImpl implements QueryService {
         List<Query> queries = queryRepository.searchQueriesByKeyword(keyword);
 
         return queries.stream()
-                .map(this::mapToQueryWithAnswersDTO)
+                .map(query -> {
+                    QueryWithAnswersDTO dto = mapToQueryWithAnswersDTO(query);
+
+                    List<AnswerDTO> sortedAnswers = dto.getAnswers().stream()
+                            .sorted(Comparator.comparingInt(AnswerDTO::getCopyCount).reversed())
+                            .collect(Collectors.toList());
+
+                    dto.setAnswers(new LinkedHashSet<>(sortedAnswers));
+
+                    return dto;
+                })
+                .sorted(Comparator.comparingInt((QueryWithAnswersDTO queryDTO) ->
+                                queryDTO.getAnswers().stream()
+                                        .mapToInt(AnswerDTO::getCopyCount)
+                                        .max()
+                                        .orElse(0))
+                        .reversed())
                 .collect(Collectors.toList());
     }
 
@@ -434,9 +450,8 @@ public class QueryServiceImpl implements QueryService {
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file, userId);
-            } else if (fileName.endsWith(".docx")) {
-                docReaderUtil.processDocFile(file, userId);
+                excelReaderUtil.processFile(file,userId);
+
             } else {
                 throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
             }
@@ -445,12 +460,15 @@ public class QueryServiceImpl implements QueryService {
         }
     }
 
-    @Transactional
-    @Override
-    public void processExcel(MultipartFile file) throws IOException {
 
-        categoryCompanyExcelUtil.processExcel(file);
+@Transactional
+    @Override
+    public void processExcel(MultipartFile file , Long userId) throws IOException {
+
+        categoryCompanyExcelUtil.processExcel(file,userId);
     }
+
+
 
 
     @Override
