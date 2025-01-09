@@ -33,8 +33,8 @@ public class QueryServiceImpl implements QueryService {
     private final ModelMapper modelMapper;
     private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
     private final ExcelReaderUtil excelReaderUtil;
-    private final DocReaderUtil docReaderUtil;
-    private final FileReaderUtil fileReaderUtil;
+
+
 
     @Autowired
     public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
@@ -46,8 +46,7 @@ public class QueryServiceImpl implements QueryService {
         this.modelMapper = modelMapper;
         this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.excelReaderUtil = excelReaderUtil;
-        this.docReaderUtil = docReaderUtil;
-        this.fileReaderUtil = fileReaderUtil;
+
     }
 
     @Override
@@ -438,8 +437,7 @@ public class QueryServiceImpl implements QueryService {
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
                 excelReaderUtil.processFile(file,userId);
-            } else if (fileName.endsWith(".docx")) {
-                docReaderUtil.processDocFile(file);
+
             } else {
                 throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
             }
@@ -448,16 +446,15 @@ public class QueryServiceImpl implements QueryService {
         }
     }
 
-    @Override
-    public void processFileReader(MultipartFile file) throws IOException {
 
-    }
 @Transactional
     @Override
     public void processExcel(MultipartFile file , Long userId) throws IOException {
 
         categoryCompanyExcelUtil.processExcel(file,userId);
     }
+
+
 
 
 }

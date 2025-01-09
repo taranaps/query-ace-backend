@@ -53,19 +53,34 @@ public class CategoryCompanyExcelUtil {
             }
         }
 
+
         for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
-            logger.debug("Processing answers for row: {}", rowIndex);
             Row row = sheet.getRow(rowIndex);
             if (row != null) {
-                handleAnswers(sheet, rowIndex, queryMap, userId);
+                Cell questionCell = row.getCell(0);
+                if (questionCell != null && questionCell.getCellType() == CellType.STRING) {
+                    String question = questionCell.getStringCellValue().trim();
+                    if (!question.isEmpty()) {
+                        queryMap.computeIfAbsent(question, q -> saveQuery(q, userId));
+                        logger.info("Saved question: {}", question);
+                    }
+                }
             }
         }
 
+
         for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
-            logger.debug("Processing tags for row: {}", rowIndex);
             Row row = sheet.getRow(rowIndex);
             if (row != null) {
-                processTags(sheet, row, tagGroupMap, queryMap);
+                handleAnswers(row, queryMap, userId);
+            }
+        }
+
+
+        for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
+            if (row != null) {
+                processTags(row, tagGroupMap, queryMap);
             }
         }
 
@@ -73,35 +88,46 @@ public class CategoryCompanyExcelUtil {
         logger.info("Excel processing completed successfully");
     }
 
-    private void handleAnswers(Sheet sheet, int rowIndex, Map<String, Query> queryMap, Long userId) {
-        Row row = sheet.getRow(rowIndex);
+    private void handleAnswers(Row row, Map<String, Query> queryMap, Long userId) {
+        Cell questionCell = row.getCell(0);
         Cell answerCell = row.getCell(1);
-        if (answerCell != null && answerCell.getCellType() == CellType.STRING) {
-            String answer = answerCell.getStringCellValue().trim();
-            if (!answer.isEmpty()) {
-                String question = row.getCell(0).getStringCellValue().trim();
-                Query query = queryMap.computeIfAbsent(question, q -> saveQuery(q, userId));
-                saveAnswer(query, answer, userId);
-                logger.info("Saved answer '{}' for question '{}'.", answer, question);
+
+        if (questionCell != null && questionCell.getCellType() == CellType.STRING) {
+            String question = questionCell.getStringCellValue().trim();
+            if (!question.isEmpty()) {
+                Query query = queryMap.get(question);
+
+                if (answerCell != null && answerCell.getCellType() == CellType.STRING) {
+                    String answer = answerCell.getStringCellValue().trim();
+                    if (!answer.isEmpty()) {
+                        saveAnswer(query, answer, userId);
+                        logger.info("Saved answer '{}' for question '{}'.", answer, question);
+                    }
+                }
             }
         }
     }
 
-    private void processTags(Sheet sheet, Row row, Map<Integer, String> tagGroupMap, Map<String, Query> queryMap) {
-        for (Map.Entry<Integer, String> entry : tagGroupMap.entrySet()) {
-            int colIndex = entry.getKey();
-            String tagGroupName = entry.getValue();
-            TagGroup tagGroup = getOrCreateTagGroup(tagGroupName);
+    private void processTags(Row row, Map<Integer, String> tagGroupMap, Map<String, Query> queryMap) {
+        Cell questionCell = row.getCell(0);
+        if (questionCell != null && questionCell.getCellType() == CellType.STRING) {
+            String question = questionCell.getStringCellValue().trim();
+            if (!question.isEmpty()) {
+                Query query = queryMap.get(question);
+                if (query != null) {
+                    for (Map.Entry<Integer, String> entry : tagGroupMap.entrySet()) {
+                        int colIndex = entry.getKey();
+                        String tagGroupName = entry.getValue();
+                        TagGroup tagGroup = getOrCreateTagGroup(tagGroupName);
 
-            Cell tagCell = row.getCell(colIndex);
-            if (tagCell != null && tagCell.getCellType() == CellType.STRING) {
-                String tagName = tagCell.getStringCellValue().trim();
-                if (!tagName.isEmpty()) {
-                    String question = row.getCell(0).getStringCellValue().trim();
-                    Query query = queryMap.get(question);
-                    if (query != null) {
-                        saveTag(query, tagGroup, tagName);
-                        logger.info("Saved tag '{}' under group '{}' for question '{}'.", tagName, tagGroupName, question);
+                        Cell tagCell = row.getCell(colIndex);
+                        if (tagCell != null && tagCell.getCellType() == CellType.STRING) {
+                            String tagName = tagCell.getStringCellValue().trim();
+                            if (!tagName.isEmpty()) {
+                                saveTag(query, tagGroup, tagName);
+                                logger.info("Saved tag '{}' under group '{}' for question '{}'.", tagName, tagGroupName, question);
+                            }
+                        }
                     }
                 }
             }

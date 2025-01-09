@@ -40,14 +40,12 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public void addTagToQuery(Long queryId, TagDTO tagDTO) {
-        // Fetch query and tag group
         Query query = queryRepository.findById(queryId)
                 .orElseThrow(() -> new IllegalArgumentException("Query not found with ID: " + queryId));
 
         TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
                 .orElseThrow(() -> new IllegalArgumentException("Tag group not found: " + tagDTO.getTagGroupName()));
 
-        // Check if tag exists, create if not
         Tag tag = tagRepository.findByTagName(tagDTO.getTagName())
                 .orElseGet(() -> {
                     Tag newTag = new Tag();
@@ -57,21 +55,18 @@ public class TagServiceImpl implements TagService {
                     return tagRepository.save(newTag);
                 });
 
-        // Add tag to query
         query.getTags().add(tag);
         queryRepository.save(query);
     }
 
     @Override
     public void deleteTagFromQuery(Long queryId, Long tagId) {
-        // Fetch the query and tag
         Query query = queryRepository.findById(queryId)
                 .orElseThrow(() -> new IllegalArgumentException("Query not found with ID: " + queryId));
 
         Tag tag = tagRepository.findById(tagId)
                 .orElseThrow(() -> new IllegalArgumentException("Tag not found with ID: " + tagId));
 
-        // Remove tag from the query
         if (query.getTags().contains(tag)) {
             query.getTags().remove(tag);
             queryRepository.save(query);
@@ -79,11 +74,9 @@ public class TagServiceImpl implements TagService {
             throw new IllegalArgumentException("Tag is not associated with the query.");
         }
 
-        // Check if the tag is associated with any other queries by checking the join table directly
         boolean tagIsUsedElsewhere = queryRepository.findByTag(tag).size() > 0;
-        // If the tag is no longer associated with any query, delete it from the tag repository
         if (!tagIsUsedElsewhere) {
-            tagRepository.delete(tag);  // Delete the tag if no queries are using it
+            tagRepository.delete(tag);
         }
     }
 

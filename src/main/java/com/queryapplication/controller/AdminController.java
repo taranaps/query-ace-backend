@@ -1,6 +1,7 @@
 package com.queryapplication.controller;
 
 import com.queryapplication.dto.CreateAdminDTO;
+import com.queryapplication.dto.UpdateAdminDTO;
 import com.queryapplication.entity.Users;
 import com.queryapplication.service.AdminService;
 import com.queryapplication.service.QueryService;
@@ -31,6 +32,12 @@ public class AdminController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
+    @GetMapping("/admins")
+    public ResponseEntity<Iterable<Users>> getAdminUsers() {
+        Iterable<Users> adminUsers = adminService.getAdminUsers();
+        return new ResponseEntity<>(adminUsers, HttpStatus.OK);
+    }
+
     @PostMapping("/create")
     public ResponseEntity<Users> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
         Users newAdmin = adminService.createAdmin(createAdminDTO);
@@ -43,23 +50,24 @@ public class AdminController {
         return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
     }
 
-    @GetMapping("/details/{userId}")
+    @GetMapping("/users/{userId}")
     public ResponseEntity<Users> getUserDetails(@PathVariable Long userId) {
         Users user = adminService.getUserDetails(userId);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
-    @PatchMapping("/edit/{userId}")
-    public ResponseEntity<Users> editUser(@PathVariable Long userId, @RequestParam(required = false) String firstName, @RequestParam(required = false) String email, @RequestParam(required = false) String location, @RequestParam(required = false) String username) {
-        Users updatedUser = adminService.editUser(userId, firstName, email, location, username);
+    @PatchMapping("/users/{userId}")
+    public ResponseEntity<Users> editUser(@PathVariable Long userId, @RequestBody UpdateAdminDTO updateAdminDTO) {
+        Users updatedUser = adminService.editUser(userId, updateAdminDTO);
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
+
     @GetMapping("/users-names")
     public ResponseEntity<List<String>> getAllUserNames() {
         try {
-            Iterable<Users> users = adminService.getAllUsers();  // Fetch all users
+            Iterable<Users> users = adminService.getAllUsers();
             List<String> userNames = StreamSupport.stream(users.spliterator(), false)
-                    .map(Users::getUsername) // Assuming User has a getUsername() method
+                    .map(Users::getUsername)
                     .collect(Collectors.toList());
             return new ResponseEntity<>(userNames, HttpStatus.OK);
         } catch (Exception e) {

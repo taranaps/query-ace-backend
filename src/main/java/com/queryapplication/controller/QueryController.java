@@ -92,7 +92,7 @@ public class QueryController {
 
     @DeleteMapping("/{queryId}")
     public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId) {
-        queryService.deleteQuery(queryId); // Service method to delete the query and its answers
+        queryService.deleteQuery(queryId);
         return ResponseEntity.noContent().build();
     }
 
@@ -101,7 +101,7 @@ public class QueryController {
         if (newQueryDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of queries.");
         }
-        NewQueryDTO newQueryDTO = newQueryDetails.get(0); // Assuming only one query is passed in the body
+        NewQueryDTO newQueryDTO = newQueryDetails.get(0);
         queryService.editQuery(queryId, newQueryDTO);
     }
 
@@ -110,9 +110,10 @@ public class QueryController {
         if (newAnswerDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of answers.");
         }
-        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
+        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0);
         queryService.editAnswer(answerId, newAnswerDTO);
     }
+
 
 
     @PostMapping("/answers/{answerId}/copy")
@@ -203,8 +204,8 @@ public class QueryController {
         return ResponseEntity.ok(results);
     }
 
-    @PostMapping("/upload-excel")
-    public ResponseEntity<String> uploadExcel(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
+    @PostMapping("/upload-file")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,  @RequestParam("userId") Long userId) {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
@@ -227,7 +228,7 @@ public class QueryController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
         }
-        }
+    }
 
     @GetMapping("/companies")
     public ResponseEntity<List<String>> getCompanies() {
