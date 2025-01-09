@@ -57,9 +57,9 @@ public class AdminController {
     @GetMapping("/users-names")
     public ResponseEntity<List<String>> getAllUserNames() {
         try {
-            Iterable<Users> users = adminService.getAllUsers();  // Fetch all users
+            Iterable<Users> users = adminService.getAllUsers();
             List<String> userNames = StreamSupport.stream(users.spliterator(), false)
-                    .map(Users::getUsername) // Assuming User has a getUsername() method
+                    .map(Users::getUsername)
                     .collect(Collectors.toList());
             return new ResponseEntity<>(userNames, HttpStatus.OK);
         } catch (Exception e) {

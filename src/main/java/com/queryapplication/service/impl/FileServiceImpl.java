@@ -34,9 +34,9 @@ public class FileServiceImpl implements FileService {
             final int currentKeywordCount = keywordCount;
             matchedAnswers = allAnswers.stream()
                     .filter(answer -> countKeywordMatches(answer, keywords) == currentKeywordCount)
-                    .sorted(Comparator.comparingInt(Answer::getCopyCount).reversed()) // Sort by copyCount (descending)
+                    .sorted(Comparator.comparingInt(Answer::getCopyCount).reversed())
                     .collect(Collectors.toList());
-            keywordCount--; // Reduce the keyword count if no match is found
+            keywordCount--;
         }
 
         return matchedAnswers;

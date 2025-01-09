@@ -15,9 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -107,7 +105,6 @@ public class QueryServiceImpl implements QueryService {
         dto.setUsersUsername(query.getAddedBy().getUsername());
         dto.setFirstName(query.getAddedBy().getFirstName());
         dto.setEmail(query.getAddedBy().getEmail());
-
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleRoleName(role != null ? role.getRoleName() : null);
 
@@ -126,7 +123,7 @@ public class QueryServiceImpl implements QueryService {
                     answerDTO.setAnswer(answer.getAnswer());
                     answerDTO.setCreatedAt(answer.getCreatedAt());
                     answerDTO.setUpdatedAt(answer.getUpdatedAt());
-
+                    answerDTO.setCopyCount(answer.getCopyCount());
                     Users addedBy = answer.getAddedBy();
                     if (addedBy != null) {
                         answerDTO.setUsersUsername(addedBy.getUsername());
@@ -384,9 +381,9 @@ public class QueryServiceImpl implements QueryService {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
 
-        // Increment copy count dynamically
         answer.setCopyCount(answer.getCopyCount() + 1);
-        answerRepository.save(answer); // Save updated answer
+        answerRepository.save(answer);
+
     }
 
     @Override
@@ -397,6 +394,8 @@ public class QueryServiceImpl implements QueryService {
         return queries.stream()
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
+
+
     }
 
     @Override
@@ -404,9 +403,30 @@ public class QueryServiceImpl implements QueryService {
         List<Query> queries = queryRepository.searchQueriesByKeyword(keyword);
 
         return queries.stream()
-                .map(this::mapToQueryWithAnswersDTO)
+                .map(query -> {
+                    QueryWithAnswersDTO dto = mapToQueryWithAnswersDTO(query);
+
+                    List<AnswerDTO> sortedAnswers = dto.getAnswers().stream()
+                            .sorted(Comparator.comparingInt(AnswerDTO::getCopyCount).reversed())
+                            .collect(Collectors.toList());
+
+                    dto.setAnswers(new HashSet<>(sortedAnswers)); // Convert List to Set
+
+                    return dto;
+                })
+                .sorted(Comparator.comparingInt((QueryWithAnswersDTO queryDTO) ->
+                                queryDTO.getAnswers().stream()
+                                        .mapToInt(AnswerDTO::getCopyCount)
+                                        .max()
+                                        .orElse(0))
+                        .reversed())
                 .collect(Collectors.toList());
     }
+
+
+
+
+
 
     @Override
     public void processFile(MultipartFile file, Long userId) throws IOException {

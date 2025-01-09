@@ -88,7 +88,7 @@ public class QueryController {
 
     @DeleteMapping("/{queryId}")
     public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId) {
-        queryService.deleteQuery(queryId); // Service method to delete the query and its answers
+        queryService.deleteQuery(queryId);
         return ResponseEntity.noContent().build();
     }
 
@@ -97,7 +97,7 @@ public class QueryController {
         if (newQueryDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of queries.");
         }
-        NewQueryDTO newQueryDTO = newQueryDetails.get(0); // Assuming only one query is passed in the body
+        NewQueryDTO newQueryDTO = newQueryDetails.get(0);
         queryService.editQuery(queryId, newQueryDTO);
     }
 
@@ -106,7 +106,7 @@ public class QueryController {
         if (newAnswerDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of answers.");
         }
-        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
+        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0);
         queryService.editAnswer(answerId, newAnswerDTO);
     }
 
@@ -118,7 +118,6 @@ public class QueryController {
         return ResponseEntity.ok("Answer copied successfully. Copy count has been updated.");
     }
 
-    // -------------------- Tag-related APIs --------------------
 
     @GetMapping("/tags/groups")
     public ResponseEntity<List<String>> getAllTagGroups() {
@@ -231,7 +230,6 @@ public class QueryController {
 
     @GetMapping("/companies")
     public ResponseEntity<List<String>> getCompanies() {
-        // Mock data, replace this with a service call if you have a database or logic to fetch companies
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
     }
