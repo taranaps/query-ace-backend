@@ -42,7 +42,13 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
             "WHERE t = :tag")
     List<com.queryapplication.entity.Query> findByTag(@Param("tag") com.queryapplication.entity.Tag tag);
 
-
-
+    @Query("SELECT q FROM com.queryapplication.entity.Query q " +
+            "JOIN q.addedBy u " +  // Join with Users entity (addedBy relationship)
+            "JOIN q.tags t " +  // Join with Tag entity (tags relationship)
+            "WHERE (:usernames IS NULL OR u.username IN :usernames) " +  // Filter by usernames
+            "AND (:tags IS NULL OR t.tagName IN :tags)")  // Filter by tag names
+    List<com.queryapplication.entity.Query> findByUsersUsernamesAndTags(
+            @Param("usernames") List<String> usernames,
+            @Param("tags") List<String> tags);
 
 }

@@ -30,7 +30,7 @@ public class ExcelReaderUtil {
         this.usersRepository = usersRepository;
     }
 
-    public void processExcel(MultipartFile file, Long userId) throws IOException {
+    public void processFile(MultipartFile file, Long userId) throws IOException {
         try (InputStream inputStream = file.getInputStream(); Workbook workbook = new XSSFWorkbook(inputStream)) {
             String fileName = file.getOriginalFilename();
 

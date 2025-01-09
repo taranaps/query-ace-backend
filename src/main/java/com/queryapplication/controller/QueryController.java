@@ -296,9 +296,9 @@ public class QueryController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
         try {
-            queryService.processExcel(file);
+            queryService.processExcel(file, userId);
             return ResponseEntity.ok("File uploaded and processed successfully!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
@@ -311,11 +311,19 @@ public class QueryController {
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
     }
+
     @GetMapping("/filter")
     public ResponseEntity<List<QueryDTO>> filterQueriesByAddedByUsernames(
             @RequestParam List<String> addedByUsernames) {
         List<QueryDTO> filteredQueries = queryService.filterQueriesByAddedByUsernames(addedByUsernames);
         return ResponseEntity.ok(filteredQueries);
+    }
+
+    @GetMapping("/filters")
+    public List<QueryWithAnswersDTO> searchQueries(
+            @RequestParam(required = false) List<String> usersUsernames,
+            @RequestParam(required = false) List<String> tags) {
+        return queryService.searchQueriesUsingFilters(usersUsernames, tags);
     }
 
 }
