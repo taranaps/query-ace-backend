@@ -39,5 +39,5 @@ public interface QueryService {
 
     void processFile(MultipartFile file, Long userId) throws IOException;
 
-    void processExcel(MultipartFile file) throws IOException;;
+    void processExcel(MultipartFile file, Long userId) throws IOException;;
 }

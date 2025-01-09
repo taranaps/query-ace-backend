@@ -31,7 +31,8 @@ public class QueryServiceImpl implements QueryService {
     private final ModelMapper modelMapper;
     private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
     private final ExcelReaderUtil excelReaderUtil;
-    private final DocReaderUtil docReaderUtil;
+
+
 
     @Autowired
     public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil) {
@@ -43,7 +44,7 @@ public class QueryServiceImpl implements QueryService {
         this.modelMapper = modelMapper;
         this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.excelReaderUtil = excelReaderUtil;
-        this.docReaderUtil = docReaderUtil;
+
     }
 
     @Override
@@ -401,9 +402,9 @@ public class QueryServiceImpl implements QueryService {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
 
+        // Increment copy count dynamically
         answer.setCopyCount(answer.getCopyCount() + 1);
-        answerRepository.save(answer);
-
+        answerRepository.save(answer); // Save updated answer
     }
 
     @Override
@@ -420,7 +421,6 @@ public class QueryServiceImpl implements QueryService {
 
     @Override
     public List<QueryWithAnswersDTO> searchQueriesByKeyword(String keyword) {
-
         List<Query> queries = queryRepository.searchQueriesByKeyword(keyword);
 
         return queries.stream()
@@ -448,6 +448,7 @@ public class QueryServiceImpl implements QueryService {
 
 
 
+
     @Override
     public void processFile(MultipartFile file, Long userId) throws IOException {
 
@@ -455,9 +456,8 @@ public class QueryServiceImpl implements QueryService {
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file, userId);
-            } else if (fileName.endsWith(".docx")) {
-                docReaderUtil.processDocFile(file, userId);
+                excelReaderUtil.processFile(file,userId);
+
             } else {
                 throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
             }
@@ -466,12 +466,15 @@ public class QueryServiceImpl implements QueryService {
         }
     }
 
-    @Transactional
-    @Override
-    public void processExcel(MultipartFile file) throws IOException {
 
-        categoryCompanyExcelUtil.processExcel(file);
+@Transactional
+    @Override
+    public void processExcel(MultipartFile file , Long userId) throws IOException {
+
+        categoryCompanyExcelUtil.processExcel(file,userId);
     }
+
+
 
 
 }
