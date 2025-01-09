@@ -420,6 +420,7 @@ public class QueryServiceImpl implements QueryService {
 
     @Override
     public List<QueryWithAnswersDTO> searchQueriesByKeyword(String keyword) {
+
         List<Query> queries = queryRepository.searchQueriesByKeyword(keyword);
 
         return queries.stream()
@@ -430,7 +431,7 @@ public class QueryServiceImpl implements QueryService {
                             .sorted(Comparator.comparingInt(AnswerDTO::getCopyCount).reversed())
                             .collect(Collectors.toList());
 
-                    dto.setAnswers(new HashSet<>(sortedAnswers)); // Convert List to Set
+                    dto.setAnswers(new LinkedHashSet<>(sortedAnswers));
 
                     return dto;
                 })
@@ -442,7 +443,6 @@ public class QueryServiceImpl implements QueryService {
                         .reversed())
                 .collect(Collectors.toList());
     }
-
 
 
 
