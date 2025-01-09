@@ -47,8 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/queryapplication/admin/**").permitAll()
                         .requestMatchers("/api/v1/queryapplication/queries/**","/api/v1/queryapplication/admin/users",
                                 "/api/v1/queryapplication/admin/users-names",
-                                "/api/v1/queryapplication/admin/details")
-                        .permitAll()
+                                "/api/v1/queryapplication/admin/details").permitAll()
                         .requestMatchers("/api/v1/queryapplication/logs/**","/api/v1/queryapplication/logs").permitAll()
                         .anyRequest().authenticated()
                 )
