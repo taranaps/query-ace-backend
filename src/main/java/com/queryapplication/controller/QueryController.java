@@ -6,6 +6,7 @@ import com.queryapplication.entity.TagGroup;
 import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
+import com.queryapplication.util.CategoryCompanyExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,14 @@ public class QueryController {
 
     private final QueryService queryService;
     private final TagService tagService;
+    private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
+
 
     @Autowired
-    public QueryController(QueryService queryService, TagService tagService) {
+    public QueryController(QueryService queryService, TagService tagService, CategoryCompanyExcelUtil categoryCompanyExcelUtil) {
         this.queryService = queryService;
         this.tagService = tagService;
+        this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
     }
 
     @GetMapping
@@ -88,7 +92,7 @@ public class QueryController {
 
     @DeleteMapping("/{queryId}")
     public ResponseEntity<Void> deleteQuery(@PathVariable Long queryId) {
-        queryService.deleteQuery(queryId); // Service method to delete the query and its answers
+        queryService.deleteQuery(queryId);
         return ResponseEntity.noContent().build();
     }
 
@@ -97,7 +101,7 @@ public class QueryController {
         if (newQueryDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of queries.");
         }
-        NewQueryDTO newQueryDTO = newQueryDetails.get(0); // Assuming only one query is passed in the body
+        NewQueryDTO newQueryDTO = newQueryDetails.get(0);
         queryService.editQuery(queryId, newQueryDTO);
     }
 
@@ -106,9 +110,11 @@ public class QueryController {
         if (newAnswerDetails.isEmpty()) {
             throw new IllegalArgumentException("Request body should contain a list of answers.");
         }
-        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0); // Assuming only one answer is passed in the body
+        NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0);
         queryService.editAnswer(answerId, newAnswerDTO);
     }
+
+
 
     @PostMapping("/answers/{answerId}/copy")
     public ResponseEntity<String> copyAnswer(@PathVariable Long answerId) {
@@ -205,6 +211,7 @@ public class QueryController {
                 return ResponseEntity.badRequest().body("Please select a file to upload.");
             }
 
+
             queryService.processFile(file, userId);
 
             return ResponseEntity.ok("File processed successfully.");
@@ -213,11 +220,35 @@ public class QueryController {
         }
     }
 
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
+        try {
+            queryService.processExcel(file, userId);
+            return ResponseEntity.ok("File uploaded and processed successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/companies")
     public ResponseEntity<List<String>> getCompanies() {
-        // Mock data, replace this with a service call if you have a database or logic to fetch companies
+
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<QueryDTO>> filterQueriesByAddedByUsernames(
+            @RequestParam List<String> addedByUsernames) {
+        List<QueryDTO> filteredQueries = queryService.filterQueriesByAddedByUsernames(addedByUsernames);
+        return ResponseEntity.ok(filteredQueries);
+    }
+
+    @GetMapping("/filters")
+    public List<QueryWithAnswersDTO> searchQueries(
+            @RequestParam(required = false) List<String> usersUsernames,
+            @RequestParam(required = false) List<String> tags) {
+        return queryService.searchQueriesUsingFilters(usersUsernames, tags);
     }
 
 }

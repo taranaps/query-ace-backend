@@ -9,10 +9,15 @@ import java.util.List;
 
 public interface QueryService {
     List<QueryDTO> getAllQueries();
+
     QueryDTO getQueryById(Long id);
+
     List<QueryWithAnswersDTO> getAllQueriesWithAnswers();
+
     QueryWithAnswersDTO getQueryWithAnswersById(Long id);
+
     List<Long> addQueries(List<NewQueryDTO> newQueries);
+
     List<AnswerResponseDTO> addAnswers(List<NewAnswerDTO> newAnswers);
 
     List<AnswerResponseDTO> addAnswersToQuery(Long queryId, List<AnswerRequestDTO> newAnswers);
@@ -29,6 +34,8 @@ public interface QueryService {
 
     void editAnswer(Long answerId, NewAnswerDTO newAnswerDTO);
 
+    List<QueryDTO> filterQueriesByAddedByUsernames(List<String> addedByUsernames);
+
     void copyAnswer(Long answerId);
 
     List<QueryWithAnswersDTO> searchQueries(String questionText, List<String> tags, String tagGroup, String answer);
@@ -37,5 +44,7 @@ public interface QueryService {
 
     void processFile(MultipartFile file, Long userId) throws IOException;
 
+    List<QueryWithAnswersDTO> searchQueriesUsingFilters(List<String> usersUsernames, List<String> tags);
 
+    void processExcel(MultipartFile file, Long userId) throws IOException;;
 }

@@ -12,7 +12,6 @@ import java.util.Date;
 
     @ControllerAdvice
     public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-        // handle specific exceptions
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorDetails> handleResourceNotFoundException(ResourceNotFoundException exception,
                                                                             WebRequest webRequest){
@@ -20,7 +19,6 @@ import java.util.Date;
                     webRequest.getDescription(false));
             return new ResponseEntity<>(errorDetails, HttpStatus.NOT_FOUND);
         }
-        //handle Bad Request exceptions
         @ExceptionHandler(APIBadRequestException.class)
         public ResponseEntity<ErrorDetails> handleAPIBadRequestException(APIBadRequestException exception,
                                                                          WebRequest webRequest){

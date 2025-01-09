@@ -24,6 +24,7 @@ public class DocReaderUtil {
     private final AnswerRepository answerRepository;
     private final UserRepository userRepository;
 
+
     @Autowired
     public DocReaderUtil(QueryRepository queryRepository, AnswerRepository answerRepository, UserRepository userRepository) {
         this.queryRepository = queryRepository;

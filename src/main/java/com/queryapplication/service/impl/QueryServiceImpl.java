@@ -6,18 +6,18 @@ import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.*;
 import com.queryapplication.service.QueryService;
 
+import com.queryapplication.util.CategoryCompanyExcelUtil;
 import com.queryapplication.util.DocReaderUtil;
 import com.queryapplication.util.ExcelReaderUtil;
 import com.queryapplication.util.FileReaderUtil;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,22 +29,22 @@ public class QueryServiceImpl implements QueryService {
     private final TagGroupRepository tagGroupRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
-
+    private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
     private final ExcelReaderUtil excelReaderUtil;
-    private final DocReaderUtil docReaderUtil;
-    private final FileReaderUtil fileReaderUtil;
+
+
 
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
         this.tagGroupRepository = tagGroupRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.excelReaderUtil = excelReaderUtil;
-        this.docReaderUtil = docReaderUtil;
-        this.fileReaderUtil = fileReaderUtil;
+
     }
 
     @Override
@@ -107,7 +107,6 @@ public class QueryServiceImpl implements QueryService {
         dto.setUsersUsername(query.getAddedBy().getUsername());
         dto.setFirstName(query.getAddedBy().getFirstName());
         dto.setEmail(query.getAddedBy().getEmail());
-
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleRoleName(role != null ? role.getRoleName() : null);
 
@@ -126,7 +125,7 @@ public class QueryServiceImpl implements QueryService {
                     answerDTO.setAnswer(answer.getAnswer());
                     answerDTO.setCreatedAt(answer.getCreatedAt());
                     answerDTO.setUpdatedAt(answer.getUpdatedAt());
-
+                    answerDTO.setCopyCount(answer.getCopyCount());
                     Users addedBy = answer.getAddedBy();
                     if (addedBy != null) {
                         answerDTO.setUsersUsername(addedBy.getUsername());
@@ -380,6 +379,24 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
+    public List<QueryDTO> filterQueriesByAddedByUsernames(List<String> addedByUsernames) {
+        // Retrieve Users entities based on the provided usernames
+        List<Users> users = userRepository.findByUsernameIn(addedByUsernames);
+        if (users.isEmpty()) {
+            throw new ResourceNotFoundException("No users found for the provided usernames");
+        }
+
+        // Retrieve Queries using the renamed repository method
+        List<Query> queries = queryRepository.findQueriesByAddedByIn(users);
+
+        // Map the Queries to QueryDTO objects
+        return queries.stream()
+                .map(this::mapToQueryDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
     public void copyAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Answer not found with id " + answerId));
@@ -397,6 +414,8 @@ public class QueryServiceImpl implements QueryService {
         return queries.stream()
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
+
+
     }
 
     @Override
@@ -404,7 +423,23 @@ public class QueryServiceImpl implements QueryService {
         List<Query> queries = queryRepository.searchQueriesByKeyword(keyword);
 
         return queries.stream()
-                .map(this::mapToQueryWithAnswersDTO)
+                .map(query -> {
+                    QueryWithAnswersDTO dto = mapToQueryWithAnswersDTO(query);
+
+                    List<AnswerDTO> sortedAnswers = dto.getAnswers().stream()
+                            .sorted(Comparator.comparingInt(AnswerDTO::getCopyCount).reversed())
+                            .collect(Collectors.toList());
+
+                    dto.setAnswers(new LinkedHashSet<>(sortedAnswers));
+
+                    return dto;
+                })
+                .sorted(Comparator.comparingInt((QueryWithAnswersDTO queryDTO) ->
+                                queryDTO.getAnswers().stream()
+                                        .mapToInt(AnswerDTO::getCopyCount)
+                                        .max()
+                                        .orElse(0))
+                        .reversed())
                 .collect(Collectors.toList());
     }
 
@@ -415,15 +450,34 @@ public class QueryServiceImpl implements QueryService {
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file, userId);
-            } else if (fileName.endsWith(".docx")) {
-                docReaderUtil.processDocFile(file, userId);
+                excelReaderUtil.processFile(file,userId);
+
             } else {
                 throw new IllegalArgumentException("Unsupported file format. Only .xlsx and .docx are allowed.");
             }
         } else {
             throw new IllegalArgumentException("File name is invalid or null.");
         }
+    }
+
+
+@Transactional
+    @Override
+    public void processExcel(MultipartFile file , Long userId) throws IOException {
+
+        categoryCompanyExcelUtil.processExcel(file,userId);
+    }
+
+
+
+
+    @Override
+    public List<QueryWithAnswersDTO> searchQueriesUsingFilters(List<String> usersUsernames, List<String> tags) {
+        List<Query> queries = queryRepository.findByUsersUsernamesAndTags(usersUsernames, tags);
+
+        return queries.stream()
+                .map(this::mapToQueryWithAnswersDTO)
+                .collect(Collectors.toList());
     }
 
 }

@@ -10,6 +10,8 @@ import java.util.List;
 public interface QueryRepository extends JpaRepository<com.queryapplication.entity.Query, Long> {
     List<com.queryapplication.entity.Query> findByQuestionContaining(String keyword);
     List<com.queryapplication.entity.Query> findByAddedBy(Users addedBy);
+    List<com.queryapplication.entity.Query> findQueriesByAddedByIn(List<com.queryapplication.entity.Users> users);
+
 
     @Query("SELECT q FROM com.queryapplication.entity.Query q " +
             "JOIN q.tags t " +
@@ -39,5 +41,14 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
             "JOIN q.tags t " +
             "WHERE t = :tag")
     List<com.queryapplication.entity.Query> findByTag(@Param("tag") com.queryapplication.entity.Tag tag);
+
+    @Query("SELECT q FROM com.queryapplication.entity.Query q " +
+            "JOIN q.addedBy u " +  // Join with Users entity (addedBy relationship)
+            "JOIN q.tags t " +  // Join with Tag entity (tags relationship)
+            "WHERE (:usernames IS NULL OR u.username IN :usernames) " +  // Filter by usernames
+            "AND (:tags IS NULL OR t.tagName IN :tags)")  // Filter by tag names
+    List<com.queryapplication.entity.Query> findByUsersUsernamesAndTags(
+            @Param("usernames") List<String> usernames,
+            @Param("tags") List<String> tags);
 
 }
