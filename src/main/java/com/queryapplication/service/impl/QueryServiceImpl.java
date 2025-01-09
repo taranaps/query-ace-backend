@@ -437,7 +437,7 @@ public class QueryServiceImpl implements QueryService {
 
         if (fileName != null) {
             if (fileName.endsWith(".xlsx") || fileName.endsWith(".xlsm")) {
-                excelReaderUtil.processExcel(file,userId);
+                excelReaderUtil.processFile(file,userId);
             } else if (fileName.endsWith(".docx")) {
                 docReaderUtil.processDocFile(file);
             } else {
@@ -454,9 +454,9 @@ public class QueryServiceImpl implements QueryService {
     }
 @Transactional
     @Override
-    public void processExcel(MultipartFile file) throws IOException {
+    public void processExcel(MultipartFile file , Long userId) throws IOException {
 
-        categoryCompanyExcelUtil.processExcel(file);
+        categoryCompanyExcelUtil.processExcel(file,userId);
     }
 
 

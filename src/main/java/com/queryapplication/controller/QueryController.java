@@ -220,9 +220,9 @@ public class QueryController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file, @RequestParam("userId") Long userId) {
         try {
-            queryService.processExcel(file);
+            queryService.processExcel(file, userId);
             return ResponseEntity.ok("File uploaded and processed successfully!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
