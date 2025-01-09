@@ -36,4 +36,6 @@ public class Tag {
     @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+
 }

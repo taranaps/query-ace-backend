@@ -1,9 +1,13 @@
 package com.queryapplication.repository;
 
+import com.queryapplication.entity.Role;
+import com.queryapplication.entity.RoleName;
 import com.queryapplication.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,6 +23,11 @@ public interface UserRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByUsernameOrEmail(String username, String email);
 
     Users findByEmailAndPassword(String email, String password);
+    List<Users> findByUsernameIn(List<String> usernames);
 
 
+
+
+    @Query("SELECT u FROM Users u JOIN u.roles r WHERE r.roleName = :roleName")
+    Iterable<Users> findByRoleName(RoleName roleName);
 }
