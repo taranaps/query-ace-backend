@@ -9,7 +9,6 @@ import com.queryapplication.service.QueryService;
 import com.queryapplication.util.CategoryCompanyExcelUtil;
 import com.queryapplication.util.DocReaderUtil;
 import com.queryapplication.util.ExcelReaderUtil;
-import com.queryapplication.util.FileReaderUtil;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -478,6 +477,13 @@ public class QueryServiceImpl implements QueryService {
         return queries.stream()
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<QueryAnswerDTO> getTopQueries() {
+        return queryRepository.findTopQueriesWithHighestCopyCount().stream()
+                .limit(10)
+                .toList();
     }
 
 }

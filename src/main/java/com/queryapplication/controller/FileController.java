@@ -1,7 +1,6 @@
 package com.queryapplication.controller;
 
 import com.queryapplication.entity.Answer;
-import com.queryapplication.entity.Query;
 import com.queryapplication.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +15,12 @@ import java.util.List;
 @RequestMapping("/api/v1/queryapplication/generatereport")
 public class FileController {
 
-    @Autowired
     private FileService fileService;
+
+    @Autowired
+    public FileController(FileService fileService) {
+        this.fileService = fileService;
+    }
 
     @PostMapping("/search")
     public ResponseEntity<List<Answer>> searchAnswersByKeywords(@RequestBody List<String> keywords) {

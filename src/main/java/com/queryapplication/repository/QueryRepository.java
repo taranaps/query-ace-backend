@@ -1,5 +1,6 @@
 package com.queryapplication.repository;
 
+import com.queryapplication.dto.QueryAnswerDTO;
 import com.queryapplication.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -50,5 +51,18 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
     List<com.queryapplication.entity.Query> findByUsersUsernamesAndTags(
             @Param("usernames") List<String> usernames,
             @Param("tags") List<String> tags);
+
+    @Query("""
+        SELECT new com.queryapplication.dto.QueryAnswerDTO(
+            q.question, 
+            MAX(a.copyCount), 
+            q.createdAt
+        )
+        FROM Query q
+        JOIN q.answers a
+        GROUP BY q.id, q.question, q.createdAt
+        ORDER BY MAX(a.copyCount) DESC
+        """)
+    List<QueryAnswerDTO> findTopQueriesWithHighestCopyCount();
 
 }

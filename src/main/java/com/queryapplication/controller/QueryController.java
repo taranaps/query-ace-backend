@@ -1,9 +1,6 @@
 package com.queryapplication.controller;
 
 import com.queryapplication.dto.*;
-import com.queryapplication.entity.Query;
-import com.queryapplication.entity.TagGroup;
-import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
 import com.queryapplication.util.CategoryCompanyExcelUtil;
@@ -251,4 +248,8 @@ public class QueryController {
         return queryService.searchQueriesUsingFilters(usersUsernames, tags);
     }
 
+    @GetMapping("/top")
+    public List<QueryAnswerDTO> getTopQueries() {
+        return queryService.getTopQueries();
+    }
 }
