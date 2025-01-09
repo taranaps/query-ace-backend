@@ -398,7 +398,6 @@ public class QueryServiceImpl implements QueryService {
     }
 
 
-
     @Override
     public void copyAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
@@ -453,6 +452,15 @@ public class QueryServiceImpl implements QueryService {
         categoryCompanyExcelUtil.processExcel(file);
     }
 
+
+    @Override
+    public List<QueryWithAnswersDTO> searchQueriesUsingFilters(List<String> usersUsernames, List<String> tags) {
+        List<Query> queries = queryRepository.findByUsersUsernamesAndTags(usersUsernames, tags);
+
+        return queries.stream()
+                .map(this::mapToQueryWithAnswersDTO)
+                .collect(Collectors.toList());
+    }
 
 }
 

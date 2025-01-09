@@ -236,11 +236,19 @@ public class QueryController {
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
     }
+
     @GetMapping("/filter")
     public ResponseEntity<List<QueryDTO>> filterQueriesByAddedByUsernames(
             @RequestParam List<String> addedByUsernames) {
         List<QueryDTO> filteredQueries = queryService.filterQueriesByAddedByUsernames(addedByUsernames);
         return ResponseEntity.ok(filteredQueries);
+    }
+
+    @GetMapping("/filters")
+    public List<QueryWithAnswersDTO> searchQueries(
+            @RequestParam(required = false) List<String> usersUsernames,
+            @RequestParam(required = false) List<String> tags) {
+        return queryService.searchQueriesUsingFilters(usersUsernames, tags);
     }
 
 }
