@@ -9,7 +9,9 @@ import com.queryapplication.service.QueryService;
 import com.queryapplication.service.TagService;
 import com.queryapplication.service.ActivityLogService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import com.queryapplication.util.CategoryCompanyExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -181,8 +183,6 @@ public class QueryController {
         activityLogService.logActivity( "copied", "answer ID: " + answerId);
     }
 
-
-
     // -------------------- Tag-related APIs --------------------
 
     @GetMapping("/tags/groups")
@@ -231,6 +231,7 @@ public class QueryController {
         tagService.deleteTagGroup(groupName);
         return ResponseEntity.ok("Tag group deleted successfully.");
     }
+
 
     @GetMapping("/tags/search")
     public ResponseEntity<List<TagDTO>> searchTags(@RequestParam String tagName) {
@@ -294,19 +295,13 @@ public class QueryController {
         }
     }
 
-    @PostMapping("/upload-file")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadExcelFile(@RequestParam("file") MultipartFile file) {
         try {
-            if (file.isEmpty()) {
-                return ResponseEntity.badRequest().body("Please select a file to upload.");
-            }
-            queryService.processFileReader(file);
-            Users user = userRepository.findById(1L)  // Replace with actual user ID source
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            activityLogService.logActivity( "uploaded", "file: " + file.getOriginalFilename());
-            return ResponseEntity.ok("File processed successfully.");
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body("Failed to process the file: " + e.getMessage());
+            queryService.processExcel(file);
+            return ResponseEntity.ok("File uploaded and processed successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error processing file: " + e.getMessage());
         }
     }
 
@@ -315,6 +310,12 @@ public class QueryController {
         // Mock data, replace this with a service call if you have a database or logic to fetch companies
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
+    }
+    @GetMapping("/filter")
+    public ResponseEntity<List<QueryDTO>> filterQueriesByAddedByUsernames(
+            @RequestParam List<String> addedByUsernames) {
+        List<QueryDTO> filteredQueries = queryService.filterQueriesByAddedByUsernames(addedByUsernames);
+        return ResponseEntity.ok(filteredQueries);
     }
 
 }

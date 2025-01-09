@@ -1,7 +1,9 @@
 package com.queryapplication.service.impl;
 
 import com.queryapplication.dto.CreateAdminDTO;
+import com.queryapplication.dto.UpdateAdminDTO;
 import com.queryapplication.entity.*;
+import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.RoleRepository;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -60,6 +63,12 @@ public class AdminServiceImpl implements AdminService {
     public Users getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Override
+    public Iterable<Users> getAdminUsers() {
+        // Fetch users who have the ADMIN role
+        return userRepository.findByRoleName(RoleName.ADMIN);
     }
 
     @Override

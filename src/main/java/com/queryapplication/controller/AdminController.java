@@ -3,6 +3,7 @@ package com.queryapplication.controller;
 import com.queryapplication.constants.ActivityConstants;
 import com.queryapplication.dto.CreateAdminDTO;
 import com.queryapplication.entity.Status;
+import com.queryapplication.dto.UpdateAdminDTO;
 import com.queryapplication.entity.Users;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
@@ -48,6 +49,12 @@ public class AdminController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
+    @GetMapping("/admins")
+    public ResponseEntity<Iterable<Users>> getAdminUsers() {
+        Iterable<Users> adminUsers = adminService.getAdminUsers();
+        return new ResponseEntity<>(adminUsers, HttpStatus.OK);
+    }
+
     @PostMapping("/create")
     public ResponseEntity<Users> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
         Users newAdmin = adminService.createAdmin(createAdminDTO);
@@ -88,6 +95,10 @@ public class AdminController {
 
     @PatchMapping("/edit")
     public ResponseEntity<Users> editUser(@RequestBody Map<String, Object> requestData) {
+
+        if (requestData.get("userId") == null) {
+            throw new IllegalArgumentException("userId is required");
+        }
         Long userId = Long.parseLong(requestData.get("userId").toString());
         String firstName = (String) requestData.get("firstName");
         String email = (String) requestData.get("email");

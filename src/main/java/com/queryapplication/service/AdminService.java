@@ -1,6 +1,7 @@
 package com.queryapplication.service;
 
 import com.queryapplication.dto.CreateAdminDTO;
+import com.queryapplication.dto.UpdateAdminDTO;
 import com.queryapplication.entity.Users;
 
 public interface AdminService {
@@ -9,6 +10,8 @@ public interface AdminService {
     Iterable<Users> getAllUsers();
 
     Users getUserByUsername(String username);
+
+    Iterable<Users> getAdminUsers();
 
     Users toggleAdminStatus(Long adminId);
 

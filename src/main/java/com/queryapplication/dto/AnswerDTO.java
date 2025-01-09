@@ -16,4 +16,9 @@ public class AnswerDTO {
     private RoleName roleName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private int copyCount;
+    public void incrementCopyCount() {
+        this.copyCount++;
+    }
+
 }
