@@ -17,9 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,7 +35,7 @@ public class QueryServiceImpl implements QueryService {
 
 
     @Autowired
-    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil, FileReaderUtil fileReaderUtil) {
+    public QueryServiceImpl(QueryRepository queryRepository, AnswerRepository answerRepository, TagRepository tagRepository, TagGroupRepository tagGroupRepository, UserRepository userRepository, ModelMapper modelMapper, CategoryCompanyExcelUtil categoryCompanyExcelUtil, ExcelReaderUtil excelReaderUtil, DocReaderUtil docReaderUtil) {
         this.queryRepository = queryRepository;
         this.answerRepository = answerRepository;
         this.tagRepository = tagRepository;
@@ -109,7 +107,6 @@ public class QueryServiceImpl implements QueryService {
         dto.setUsersUsername(query.getAddedBy().getUsername());
         dto.setFirstName(query.getAddedBy().getFirstName());
         dto.setEmail(query.getAddedBy().getEmail());
-
         Role role = query.getAddedBy().getRoles().stream().findFirst().orElse(null);
         dto.setRoleRoleName(role != null ? role.getRoleName() : null);
 
@@ -128,7 +125,7 @@ public class QueryServiceImpl implements QueryService {
                     answerDTO.setAnswer(answer.getAnswer());
                     answerDTO.setCreatedAt(answer.getCreatedAt());
                     answerDTO.setUpdatedAt(answer.getUpdatedAt());
-
+                    answerDTO.setCopyCount(answer.getCopyCount());
                     Users addedBy = answer.getAddedBy();
                     if (addedBy != null) {
                         answerDTO.setUsersUsername(addedBy.getUsername());
@@ -418,6 +415,8 @@ public class QueryServiceImpl implements QueryService {
         return queries.stream()
                 .map(this::mapToQueryWithAnswersDTO)
                 .collect(Collectors.toList());
+
+
     }
 
     @Override
@@ -425,9 +424,30 @@ public class QueryServiceImpl implements QueryService {
         List<Query> queries = queryRepository.searchQueriesByKeyword(keyword);
 
         return queries.stream()
-                .map(this::mapToQueryWithAnswersDTO)
+                .map(query -> {
+                    QueryWithAnswersDTO dto = mapToQueryWithAnswersDTO(query);
+
+                    List<AnswerDTO> sortedAnswers = dto.getAnswers().stream()
+                            .sorted(Comparator.comparingInt(AnswerDTO::getCopyCount).reversed())
+                            .collect(Collectors.toList());
+
+                    dto.setAnswers(new LinkedHashSet<>(sortedAnswers));
+
+                    return dto;
+                })
+                .sorted(Comparator.comparingInt((QueryWithAnswersDTO queryDTO) ->
+                                queryDTO.getAnswers().stream()
+                                        .mapToInt(AnswerDTO::getCopyCount)
+                                        .max()
+                                        .orElse(0))
+                        .reversed())
                 .collect(Collectors.toList());
     }
+
+
+
+
+
 
     @Override
     public void processFile(MultipartFile file, Long userId) throws IOException {
@@ -458,10 +478,6 @@ public class QueryServiceImpl implements QueryService {
 
 
 }
-
-
-
-
 
 
 
