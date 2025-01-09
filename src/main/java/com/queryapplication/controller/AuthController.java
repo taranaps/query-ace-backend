@@ -9,12 +9,16 @@ import com.queryapplication.repository.UserRepository;
 import com.queryapplication.response.JwtResponse;
 import com.queryapplication.security.JwtTokenProvider;
 import com.queryapplication.security.UserPrincipal;
+import com.queryapplication.dto.PasswordResetDTO;
+import com.queryapplication.dto.UserDTO;
+import com.queryapplication.service.PasswordService;
 import com.queryapplication.service.UsersService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
@@ -26,23 +30,37 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import com.queryapplication.dto.LoginDTO;
 
+import java.net.URI;
+
 import java.util.HashSet;
 import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/queryapplication/auth")
+@CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Bearer Authentication")
 
 public class AuthController {
-
-    @Autowired
-    private final UsersService usersService;
+    private UsersService userService;
+    private PasswordService passwordService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    public AuthController(UsersService userService, PasswordService passwordService, UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
+        this.userService = userService;
+        this.passwordService = passwordService;
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping("/register")
@@ -114,4 +132,37 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/request-password-reset")
+    public ResponseEntity<?> requestPasswordReset(@RequestParam String email) {
+        boolean result = passwordService.initiatePasswordReset(email);
+        if (result) {
+            return ResponseEntity.ok("Password reset link has been sent to your email.");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not found.");
+    }
+
+    @GetMapping("/reset-password/{hashId}")
+    public ResponseEntity<?> resetPassword(@PathVariable String hashId) {
+        boolean isValid = passwordService.validatePasswordReset(hashId);
+        if (isValid) {
+            String frontendResetPasswordUrl = "http://localhost:3000/pages/reset-password?token=" + hashId;
+            HttpHeaders headers = new HttpHeaders();
+            headers.setLocation(URI.create(frontendResetPasswordUrl));
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired password reset link.");
+    }
+
+    @PostMapping("/reset-password/{hashId}")
+    public ResponseEntity<?> resetPassword(@PathVariable String hashId, @RequestBody PasswordResetDTO passwordResetDTO) {
+        if (!passwordResetDTO.getNewPassword().equals(passwordResetDTO.getConfirmNewPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Passwords do not match.");
+        }
+
+        boolean result = passwordService.resetPassword(hashId, passwordResetDTO);
+        if (result) {
+            return ResponseEntity.ok("Password has been successfully reset.");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to reset password.");
+    }
 }
