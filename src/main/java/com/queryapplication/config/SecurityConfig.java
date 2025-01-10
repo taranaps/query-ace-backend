@@ -44,7 +44,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers("/api/v1/queryapplication/admin/**").permitAll()
-                        .requestMatchers("/api/v1/queryapplication/queries/**","/api/v1/queryapplication/admin/users",
+                        .requestMatchers("/api/v1/queryapplication/queries/**","/api/v1/queryapplication/**","/api/v1/queryapplication/admin/users",
                                 "/api/v1/queryapplication/admin/users-names",
                                 "/api/v1/queryapplication/admin/details").permitAll()
                         .requestMatchers("/api/v1/queryapplication/logs/**","/api/v1/queryapplication/logs").permitAll()

@@ -58,38 +58,14 @@ public class AdminController {
     @PostMapping("/create")
     public ResponseEntity<Users> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
         Users newAdmin = adminService.createAdmin(createAdminDTO);
-
-        // Log activity
-        activityLogService.logActivity( "Created new admin", "Admin created a new admin with username: " + newAdmin.getUsername());
-
         return new ResponseEntity<>(newAdmin, HttpStatus.CREATED);
     }
 
     @PutMapping("/toggle-status/{adminId}")
-    public ResponseEntity toggleAdminStatus(@PathVariable Long adminId, @RequestBody Map<String, Long> requestData) {
-        Long userId = requestData.get("userId"); // Fetch userId from the request body
-
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public ResponseEntity<Users> toggleAdminStatus(@PathVariable Long adminId)
+    {
         Users updatedAdmin = adminService.toggleAdminStatus(adminId);
-
-        activityLogService.logActivity("Toggled admin status", "Admin toggled the status for admin ID: " + adminId);
-
         return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
-    }
-
-
-    @GetMapping("/details")
-    public ResponseEntity<Users> getUserDetails(@RequestParam Long userId) {
-        Users userDetails = adminService.getUserDetails(userId);
-
-        Users adminUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-        activityLogService.logActivity( "Fetched user details", "Admin viewed the details for user ID: " + userId);
-
-        return new ResponseEntity<>(userDetails, HttpStatus.OK);
     }
 
 
@@ -130,27 +106,6 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.emptyList());
         }
-    }
-
-    @PutMapping("/toggle-status-with-log")
-    public ResponseEntity<Users> logAdminStatusToggle(@RequestBody Map<String, Long> requestData) {
-        Long userId = requestData.get("userId");
-        Long adminId = requestData.get("adminId");
-
-        Users performer = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Users updatedAdmin = adminService.toggleAdminStatus(adminId);
-
-        String action = updatedAdmin.getStatus() == Status.ACTIVE ?
-                ActivityConstants.USER_ENABLED : ActivityConstants.USER_DISABLED;
-        activityLogService.logActivity(
-
-                action,
-                String.format("%s (%s)", updatedAdmin.getFirstName(), updatedAdmin.getEmail())
-        );
-
-        return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
     }
 
 
