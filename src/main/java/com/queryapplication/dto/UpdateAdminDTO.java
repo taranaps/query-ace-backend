@@ -13,4 +13,5 @@ public class UpdateAdminDTO {
     private String firstName;
     private String email;
     private String username;
+    private String location;
 }

@@ -94,21 +94,26 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public Users editUser(Long userId, String firstName, String email, String location, String username) {
+    public Users editUser(Long userId, UpdateAdminDTO updateAdminDTO) {
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + userId));
 
-        if (firstName != null && !firstName.isEmpty()) {
-            user.setFirstName(firstName);
+        if (updateAdminDTO.getFirstName() != null && !updateAdminDTO.getFirstName().isEmpty()) {
+            user.setFirstName(updateAdminDTO.getFirstName());
         }
-        if (email != null && !email.isEmpty()) {
-            user.setEmail(email);
+        if (updateAdminDTO.getEmail() != null && !updateAdminDTO.getEmail().isEmpty()) {
+            user.setEmail(updateAdminDTO.getEmail());
         }
-        if (location != null && !location.isEmpty()) {
-            user.setLocation(LocationName.valueOf(location));
+        if (updateAdminDTO.getUsername() != null && !updateAdminDTO.getUsername().isEmpty()) {
+            user.setUsername(updateAdminDTO.getUsername());
         }
-        if (username != null && !username.isEmpty()) {
-            user.setUsername(username);
+        if (updateAdminDTO.getLocation() != null && !updateAdminDTO.getLocation().isEmpty()) {
+            try {
+                LocationName locationName = LocationName.valueOf(updateAdminDTO.getLocation().toUpperCase());
+                user.setLocation(locationName);
+            } catch (IllegalArgumentException e) {
+                throw new ResourceNotFoundException("Invalid location: " + updateAdminDTO.getLocation());
+            }
         }
 
         return userRepository.save(user);

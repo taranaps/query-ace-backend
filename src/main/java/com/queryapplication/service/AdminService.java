@@ -17,5 +17,5 @@ public interface AdminService {
 
     Users getUserDetails(Long userId);
 
-    Users editUser(Long userId, String firstName, String email, String location, String username);
+    Users editUser(Long userId,UpdateAdminDTO updateAdminDTO);
 }

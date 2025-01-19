@@ -2,17 +2,19 @@ package com.queryapplication.controller;
 
 import com.queryapplication.constants.ActivityConstants;
 import com.queryapplication.dto.CreateAdminDTO;
+import com.queryapplication.dto.UserDTO;
 import com.queryapplication.entity.Status;
 import com.queryapplication.dto.UpdateAdminDTO;
 import com.queryapplication.entity.Users;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
-import com.queryapplication.service.ActivityLogService; // Import the ActivityLogService
+import com.queryapplication.service.ActivityLogService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;  // Add this import
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -28,14 +30,16 @@ import java.util.stream.StreamSupport;
 @SecurityRequirement(name = "Bearer Authentication")
 public class AdminController {
     private final AdminService adminService;
-    private final ActivityLogService activityLogService; // Declare ActivityLogService
+    private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminController(AdminService adminService, ActivityLogService activityLogService,UserRepository userRepository) {
+    public AdminController(AdminService adminService, ActivityLogService activityLogService,UserRepository userRepository,PasswordEncoder passwordEncoder) {
         this.adminService = adminService;
         this.activityLogService = activityLogService;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     private Users getAuthenticatedUser(Authentication authentication) {
@@ -56,38 +60,78 @@ public class AdminController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Users> createAdmin(@RequestBody CreateAdminDTO createAdminDTO) {
-        Users newAdmin = adminService.createAdmin(createAdminDTO);
-        return new ResponseEntity<>(newAdmin, HttpStatus.CREATED);
+    public ResponseEntity<?> createAdmin(
+            @Valid @RequestBody CreateAdminDTO createAdminDTO,
+            Authentication authentication
+    ) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Authentication required");
+        }
+
+        try {
+            if (userRepository.existsByUsername(createAdminDTO.getUsername())) {
+                return ResponseEntity.badRequest()
+                        .body("Username is already taken!");
+            }
+
+            if (userRepository.existsByEmail(createAdminDTO.getEmail())) {
+                return ResponseEntity.badRequest()
+                        .body("Email is already in use!");
+            }
+
+            createAdminDTO.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
+
+            Users newAdmin = adminService.createAdmin(createAdminDTO);
+
+            activityLogService.logActivity(
+                    "Created new admin",
+                    String.format("Admin %s created a new admin with username: %s",
+                            authentication.getName(),
+                            newAdmin.getUsername())
+            );
+
+            return new ResponseEntity<>(newAdmin, HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body("Error creating admin: " + e.getMessage());
+        }
     }
 
     @PutMapping("/toggle-status/{adminId}")
-    public ResponseEntity<Users> toggleAdminStatus(@PathVariable Long adminId)
-    {
+    public ResponseEntity toggleAdminStatus(@PathVariable Long adminId, @RequestBody Map<String, Long> requestData) {
+        Long userId = requestData.get("userId");
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Users updatedAdmin = adminService.toggleAdminStatus(adminId);
+
+        activityLogService.logActivity("Toggled admin status", "Admin toggled the status for admin ID: " + adminId);
+
         return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
+    }
+
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<Users> getUserDetails(@PathVariable Long userId) {
+        Users user = adminService.getUserDetails(userId);
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
 
     @PatchMapping("/edit")
     public ResponseEntity<Users> editUser(@RequestBody Map<String, Object> requestData) {
-
-        if (requestData.get("userId") == null) {
-            throw new IllegalArgumentException("userId is required");
-        }
         Long userId = Long.parseLong(requestData.get("userId").toString());
-        String firstName = (String) requestData.get("firstName");
-        String email = (String) requestData.get("email");
-        String location = (String) requestData.get("location");
-        String username = (String) requestData.get("username");
+        UpdateAdminDTO updateAdminDTO = new UpdateAdminDTO();
+        updateAdminDTO.setFirstName((String) requestData.get("firstName"));
+        updateAdminDTO.setEmail((String) requestData.get("email"));
+        updateAdminDTO.setUsername((String) requestData.get("username"));
+        updateAdminDTO.setLocation((String) requestData.get("location"));
 
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Users updatedUser = adminService.editUser(userId, firstName, email, location, username);
+        Users updatedUser = adminService.editUser(userId, updateAdminDTO);
 
         activityLogService.logActivity(
-
                 "Edited user details",
                 String.format("Admin edited user ID: %d with new details.", userId)
         );
@@ -95,18 +139,21 @@ public class AdminController {
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
     @GetMapping("/users-names")
-    public ResponseEntity<List<String>> getAllUserNames() {
+    public ResponseEntity<List<UserDTO>> getAllUserNames() {
         try {
-            Iterable<Users> users = adminService.getAllUsers();  // Fetch all users
-            List<String> userNames = StreamSupport.stream(users.spliterator(), false)
-                    .map(Users::getUsername) // Assuming User has a getUsername() method
+            Iterable<Users> users = adminService.getAllUsers();
+            List<UserDTO> userDTOs = StreamSupport.stream(users.spliterator(), false)
+                    .map(user -> {
+                        UserDTO dto = new UserDTO();
+                        dto.setId(user.getId());
+                        dto.setUsername(user.getUsername());
+                        return dto;
+                    })
                     .collect(Collectors.toList());
-            return new ResponseEntity<>(userNames, HttpStatus.OK);
+            return new ResponseEntity<>(userDTOs, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.emptyList());
         }
     }
-
-
 }
