@@ -10,6 +10,8 @@ import com.queryapplication.service.TagService;
 import com.queryapplication.service.ActivityLogService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.queryapplication.util.CategoryCompanyExcelUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,7 @@ public class QueryController {
     private final TagService tagService;
     private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(QueryController.class);
 
     @Autowired
     public QueryController(QueryService queryService, TagService tagService, ActivityLogService activityLogService, UserRepository userRepository) {
@@ -264,6 +267,16 @@ public class QueryController {
             @RequestParam(required = false) List<String> usersUsernames,
             @RequestParam(required = false) List<String> tags) {
         return queryService.searchQueriesUsingFilters(usersUsernames, tags);
+    }
+    @GetMapping("/trending")
+    public ResponseEntity<List<TrendingQueryDTO>> getTopQueries() {
+        try {
+            List<TrendingQueryDTO> topQueries = queryService.getTopQueries();
+            return ResponseEntity.ok(topQueries);
+        } catch (Exception e) {
+            logger.error("Error fetching top queries", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 }

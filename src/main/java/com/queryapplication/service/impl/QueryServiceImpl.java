@@ -5,7 +5,7 @@ import com.queryapplication.entity.*;
 import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.*;
 import com.queryapplication.service.QueryService;
-
+import com.queryapplication.entity.Query;
 import com.queryapplication.util.CategoryCompanyExcelUtil;
 import com.queryapplication.util.DocReaderUtil;
 import com.queryapplication.util.ExcelReaderUtil;
@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -480,6 +481,28 @@ public class QueryServiceImpl implements QueryService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TrendingQueryDTO> getTopQueries() {
+        List<Query> topQueries = queryRepository.findTopQueries();
+
+        return topQueries.stream()
+                .map(query -> {
+                    TrendingQueryDTO dto = new TrendingQueryDTO();
+                    dto.setId(query.getId());
+                    dto.setQuestion(query.getQuestion());
+                    // Format the date to a more readable string
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+                    dto.setCreatedAt(query.getCreatedAt().format(formatter));
+                    Integer copyCount = query.getAnswers().stream()
+                            .map(answer -> answer.getCopyCount())
+                            .filter(count -> count != null)
+                            .mapToInt(Integer::intValue)
+                            .sum();
+                    dto.setHighestCopyCount(copyCount);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
 }
 
 

@@ -51,4 +51,10 @@ public interface QueryRepository extends JpaRepository<com.queryapplication.enti
             @Param("usernames") List<String> usernames,
             @Param("tags") List<String> tags);
 
+    @Query("SELECT q FROM com.queryapplication.entity.Query q " +
+            "LEFT JOIN q.answers a " +
+            "GROUP BY q.id, q.question, q.createdAt " +
+            "ORDER BY SUM(COALESCE(a.copyCount, 0)) DESC")
+    List<com.queryapplication.entity.Query> findTopQueries();
+
 }
