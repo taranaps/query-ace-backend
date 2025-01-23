@@ -32,11 +32,13 @@ public class QueryController {
     private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(QueryController.class);
+    private final CategoryCompanyExcelUtil categoryCompanyExcelUtil;
 
     @Autowired
-    public QueryController(QueryService queryService, TagService tagService, ActivityLogService activityLogService, UserRepository userRepository) {
+    public QueryController(QueryService queryService, TagService tagService, CategoryCompanyExcelUtil categoryCompanyExcelUtil,ActivityLogService activityLogService, UserRepository userRepository) {
         this.queryService = queryService;
         this.tagService = tagService;
+        this.categoryCompanyExcelUtil = categoryCompanyExcelUtil;
         this.activityLogService = activityLogService;
         this.userRepository = userRepository;
     }
@@ -61,12 +63,12 @@ public class QueryController {
         return queryService.getQueryWithAnswersById(id);
     }
 
-
     @PostMapping
     public ResponseEntity<List<Long>> addQueries(@RequestBody List<NewQueryDTO> newQueries) {
         List<Long> queryIds = queryService.addQueries(newQueries);
         return ResponseEntity.ok(queryIds);
     }
+
 
     @PostMapping("/id/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
@@ -90,7 +92,6 @@ public class QueryController {
         List<Long> queryIds = queryService.addBulkQueries(bulkQueries);
         return ResponseEntity.ok(queryIds);
     }
-
 
     @DeleteMapping("/answers/{answerId}")
     public void deleteAnswer(@PathVariable Long answerId) {
@@ -117,6 +118,7 @@ public class QueryController {
         NewQueryDTO newQueryDTO = newQueryDetails.get(0);
         queryService.editQuery(queryId, newQueryDTO);
     }
+
     @PatchMapping("/answers/{answerId}")
     public void editAnswer(@PathVariable Long answerId, @RequestBody List<NewAnswerDTO> newAnswerDetails) {
         if (newAnswerDetails.isEmpty()) {
@@ -125,6 +127,7 @@ public class QueryController {
         NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0);
         queryService.editAnswer(answerId, newAnswerDTO);
     }
+
 
 
     @PostMapping("/answers/{answerId}/copy")
@@ -182,6 +185,10 @@ public class QueryController {
         return ResponseEntity.ok("Tag group deleted successfully.");
     }
 
+    @PostMapping("/tags")
+    public ResponseEntity<TagDTO> addTag(@RequestBody TagDTO tagDTO) {
+        return ResponseEntity.ok(tagService.addTag(tagDTO));
+    }
 
     @GetMapping("/tags/search")
     public ResponseEntity<List<TagDTO>> searchTags(@RequestParam String tagName) {
@@ -193,17 +200,6 @@ public class QueryController {
         List<TagGroupDTO> tagGroups = tagService.getTagGroups();
         return ResponseEntity.ok(tagGroups);
     }
-
-    @PostMapping("/tags")
-    public ResponseEntity<TagDTO> addTag(@RequestBody TagDTO tagDTO) {
-        TagDTO addedTag = tagService.addTag(tagDTO);
-        // Need to get user info from tagDTO or another source
-        Users user = userRepository.findById(1L)  // Replace with actual user ID source
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity( "added", "tag: " + tagDTO.getTagName());
-        return ResponseEntity.ok(addedTag);
-    }
-
 
     @GetMapping("/search")
     public ResponseEntity<List<QueryWithAnswersDTO>> searchQueries(
@@ -250,7 +246,7 @@ public class QueryController {
 
     @GetMapping("/companies")
     public ResponseEntity<List<String>> getCompanies() {
-        // Mock data, replace this with a service call if you have a database or logic to fetch companies
+
         List<String> companies = List.of("Company A", "Company B", "Company C", "Company D");
         return ResponseEntity.ok(companies);
     }
@@ -268,15 +264,19 @@ public class QueryController {
             @RequestParam(required = false) List<String> tags) {
         return queryService.searchQueriesUsingFilters(usersUsernames, tags);
     }
-    @GetMapping("/trending")
-    public ResponseEntity<List<TrendingQueryDTO>> getTopQueries() {
-        try {
-            List<TrendingQueryDTO> topQueries = queryService.getTopQueries();
-            return ResponseEntity.ok(topQueries);
-        } catch (Exception e) {
-            logger.error("Error fetching top queries", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+//    @GetMapping("/trending")
+//    public ResponseEntity<List<TrendingQueryDTO>> getTopQueries() {
+//        try {
+//            List<TrendingQueryDTO> topQueries = queryService.getTopQueries();
+//            return ResponseEntity.ok(topQueries);
+//        } catch (Exception e) {
+//            logger.error("Error fetching top queries", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
 
+    @GetMapping("/top")
+    public List<QueryAnswerDTO> getTopQueries() {
+        return queryService.getTopQueries();
+    }
 }

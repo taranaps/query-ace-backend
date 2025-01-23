@@ -482,27 +482,12 @@ public class QueryServiceImpl implements QueryService {
     }
 
     @Override
-    public List<TrendingQueryDTO> getTopQueries() {
-        List<Query> topQueries = queryRepository.findTopQueries();
-
-        return topQueries.stream()
-                .map(query -> {
-                    TrendingQueryDTO dto = new TrendingQueryDTO();
-                    dto.setId(query.getId());
-                    dto.setQuestion(query.getQuestion());
-                    // Format the date to a more readable string
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
-                    dto.setCreatedAt(query.getCreatedAt().format(formatter));
-                    Integer copyCount = query.getAnswers().stream()
-                            .map(answer -> answer.getCopyCount())
-                            .filter(count -> count != null)
-                            .mapToInt(Integer::intValue)
-                            .sum();
-                    dto.setHighestCopyCount(copyCount);
-                    return dto;
-                })
-                .collect(Collectors.toList());
+    public List<QueryAnswerDTO> getTopQueries() {
+        return queryRepository.findTopQueriesWithHighestCopyCount().stream()
+                .limit(10)
+                .toList();
     }
+
 }
 
 

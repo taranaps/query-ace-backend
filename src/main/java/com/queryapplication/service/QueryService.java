@@ -48,5 +48,5 @@ public interface QueryService {
 
     void processExcel(MultipartFile file, Long userId) throws IOException;;
 
-    List<TrendingQueryDTO> getTopQueries();
+    List<QueryAnswerDTO> getTopQueries();
 }
