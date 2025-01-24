@@ -38,12 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
-            logger.info("Processing JWT token");
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                logger.info("Token is valid");
                 String username = tokenProvider.getUsernameFromToken(jwt);
-
                 Claims claims = tokenProvider.getClaimsFromToken(jwt);
                 String roles = claims.get("roles", String.class);
 
@@ -52,20 +49,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                logger.info("User details loaded");
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, authorities);
-                authentication.setDetails(
-                        org.springframework.security.web.authentication.WebAuthenticationDetails.class
-                                .getDeclaredConstructor(HttpServletRequest.class)
-                                .newInstance(request)
-                );
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                logger.info("Authentication completed");
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
-            logger.error("Authentication error occurred: " + ex.getMessage());
+            logger.error("JWT Authentication failed: {}", ex);
         }
 
         filterChain.doFilter(request, response);
