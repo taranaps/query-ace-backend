@@ -4,7 +4,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,8 @@ import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
+    @Autowired
+    private StringRedisTemplate redisTemplate;
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -26,7 +30,8 @@ public class JwtTokenProvider {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+        // Convert milliseconds to seconds for the exp claim
+        Date expiryDate = new Date((now.getTime() + jwtExpiration) / 1000 * 1000);
 
         String roles = userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -36,8 +41,8 @@ public class JwtTokenProvider {
                 .setSubject(userPrincipal.getUsername())
                 .claim("roles", roles)
                 .claim("userId", userPrincipal.getId())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
+                .setIssuedAt(now) // "iat" claim (in milliseconds)
+                .setExpiration(expiryDate) // "exp" claim (in seconds)
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -59,6 +64,9 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
+            if (redisTemplate.hasKey("blacklisted_token:" + token)) {
+                return false;
+            }
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()

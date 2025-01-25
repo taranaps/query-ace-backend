@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.queryapplication.dto.LoginDTO;
 
@@ -34,6 +36,7 @@ import java.net.URI;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/queryapplication/auth")
@@ -49,6 +52,12 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @Value("${app.jwt.expiration-milliseconds}")
+    private long jwtExpiration;
 
     @Autowired
     public AuthController(UsersService userService, PasswordService passwordService, UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
@@ -129,6 +138,22 @@ public class AuthController {
             logger.error("Login failed - Unexpected error for email: {}", loginDTO.getEmail(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred");
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
+        try {
+            String jwt = token.substring(7);
+            redisTemplate.opsForValue().set(
+                    "blacklisted_token:" + jwt,
+                    "true",
+                    jwtExpiration,
+                    TimeUnit.MILLISECONDS
+            );
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
