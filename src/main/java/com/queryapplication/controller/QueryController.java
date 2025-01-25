@@ -81,9 +81,9 @@ public class QueryController {
             @PathVariable Long queryId,
             @RequestBody List<AnswerRequestDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswersToQuery(queryId, newAnswers);
-        Users user = userRepository.findById(newAnswers.get(0).getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        activityLogService.logActivity("added", "answers to query ID: " + queryId);
+//        Users user = userRepository.findById(newAnswers.get(0).getUserId())
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//        activityLogService.logActivity("added", "answers to query ID: " + queryId);
         return ResponseEntity.ok(response);
     }
 

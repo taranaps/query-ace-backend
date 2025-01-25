@@ -24,8 +24,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
 
     @Autowired
     private JwtTokenProvider tokenProvider;
@@ -38,11 +42,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
+            logger.debug("Received JWT: {}", jwt);
+
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                logger.debug("JWT validation successful");
                 String username = tokenProvider.getUsernameFromToken(jwt);
                 Claims claims = tokenProvider.getClaimsFromToken(jwt);
                 String roles = claims.get("roles", String.class);
+                Long userId = claims.get("userId", Long.class);
 
                 Collection<GrantedAuthority> authorities = Arrays.stream(roles.split(","))
                         .map(SimpleGrantedAuthority::new)
@@ -55,6 +63,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+            else {
+                logger.debug("JWT validation failed or token empty");
             }
         } catch (Exception ex) {
             logger.error("JWT Authentication failed: {}", ex);

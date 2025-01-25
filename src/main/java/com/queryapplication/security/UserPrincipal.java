@@ -1,10 +1,11 @@
 package com.queryapplication.security;
 
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-
+@Getter
 public class UserPrincipal implements UserDetails {
         private Long id;
         private String email;
@@ -17,6 +18,10 @@ public class UserPrincipal implements UserDetails {
             this.email = email;
             this.password = password;
             this.authorities = authorities;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         @Override
@@ -53,4 +58,6 @@ public class UserPrincipal implements UserDetails {
         public boolean isEnabled() {
             return true;
         }
+
+
 }
