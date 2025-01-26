@@ -4,9 +4,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -17,8 +18,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
-    @Autowired
-    private StringRedisTemplate redisTemplate;
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -26,8 +25,11 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration-milliseconds}")
     private int jwtExpiration;
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     public String generateToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
 
         Date now = new Date();
         // Convert milliseconds to seconds for the exp claim
@@ -64,15 +66,16 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            if (redisTemplate.hasKey("blacklisted_token:" + token)) {
-                return false;
-            }
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token);
+            logger.info("JWT signature validation successful");
+
             return true;
         } catch (Exception ex) {
+            logger.error("Token validation failed: {}", ex.getMessage());
+
             return false;
         }
     }

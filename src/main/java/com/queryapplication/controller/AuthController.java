@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,9 +51,6 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    private StringRedisTemplate redisTemplate;
 
     @Value("${app.jwt.expiration-milliseconds}")
     private long jwtExpiration;
@@ -142,19 +138,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
-        try {
-            String jwt = token.substring(7);
-            redisTemplate.opsForValue().set(
-                    "blacklisted_token:" + jwt,
-                    "true",
-                    jwtExpiration,
-                    TimeUnit.MILLISECONDS
-            );
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<?> logout() {
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/request-password-reset")

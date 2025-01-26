@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/api/v1/queryapplication/admin/users-names",
                                 "/api/v1/queryapplication/admin/details").authenticated()
                         .requestMatchers("/api/v1/queryapplication/logs/**","/api/v1/queryapplication/logs").authenticated()
-                        .requestMatchers("/api/v1/queryapplication/admin/create","/api/v1/queryapplication/admin/toggle-status/{adminId}","/api/v1/queryapplication/admin/edit").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/v1/queryapplication/admin/create","/api/v1/queryapplication/admin/toggle-status/{adminId}","/api/v1/queryapplication/admin/edit").hasAuthority("SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(

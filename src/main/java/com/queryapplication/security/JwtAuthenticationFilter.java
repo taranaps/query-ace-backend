@@ -42,14 +42,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String jwt = getJwtFromRequest(request);
-            logger.debug("Received JWT: {}", jwt);
-
+            logger.info("Path: {}", request.getRequestURI());
+            logger.info("Token present: {}", jwt != null);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 logger.debug("JWT validation successful");
                 String username = tokenProvider.getUsernameFromToken(jwt);
                 Claims claims = tokenProvider.getClaimsFromToken(jwt);
                 String roles = claims.get("roles", String.class);
+                logger.info("User roles from token: {}", roles);
+
                 Long userId = claims.get("userId", Long.class);
 
                 Collection<GrantedAuthority> authorities = Arrays.stream(roles.split(","))
