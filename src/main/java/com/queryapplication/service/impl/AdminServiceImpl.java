@@ -107,6 +107,7 @@ public class AdminServiceImpl implements AdminService {
         if (updateAdminDTO.getFirstName() != null && !updateAdminDTO.getFirstName().isEmpty()) {
             user.setFirstName(updateAdminDTO.getFirstName());
         }
+
         if (updateAdminDTO.getEmail() != null && !updateAdminDTO.getEmail().trim().isEmpty()) {
             String newEmail = updateAdminDTO.getEmail().trim();
             if (!newEmail.equals(user.getEmail())) {
