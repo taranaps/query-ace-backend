@@ -32,14 +32,12 @@ public class AdminController {
     private final AdminService adminService;
     private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AdminController(AdminService adminService, ActivityLogService activityLogService,UserRepository userRepository,PasswordEncoder passwordEncoder) {
+    public AdminController(AdminService adminService, ActivityLogService activityLogService,UserRepository userRepository) {
         this.adminService = adminService;
         this.activityLogService = activityLogService;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     private Users getAuthenticatedUser(Authentication authentication) {
@@ -79,8 +77,6 @@ public class AdminController {
                 return ResponseEntity.badRequest()
                         .body("Email is already in use!");
             }
-
-            createAdminDTO.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
 
             Users newAdmin = adminService.createAdmin(createAdminDTO);
 
@@ -124,10 +120,18 @@ public class AdminController {
     public ResponseEntity<Users> editUser(@RequestBody Map<String, Object> requestData) {
         Long userId = Long.parseLong(requestData.get("userId").toString());
         UpdateAdminDTO updateAdminDTO = new UpdateAdminDTO();
-        updateAdminDTO.setFirstName((String) requestData.get("firstName"));
-        updateAdminDTO.setEmail((String) requestData.get("email"));
-        updateAdminDTO.setUsername((String) requestData.get("username"));
-        updateAdminDTO.setLocation((String) requestData.get("location"));
+        if (requestData.containsKey("firstName")) {
+            updateAdminDTO.setFirstName((String) requestData.get("firstName"));
+        }
+        if (requestData.containsKey("email")) {
+            updateAdminDTO.setEmail((String) requestData.get("email"));
+        }
+        if (requestData.containsKey("username")) {
+            updateAdminDTO.setUsername((String) requestData.get("username"));
+        }
+        if (requestData.containsKey("location")) {
+            updateAdminDTO.setLocation((String) requestData.get("location"));
+        }
 
         Users updatedUser = adminService.editUser(userId, updateAdminDTO);
 

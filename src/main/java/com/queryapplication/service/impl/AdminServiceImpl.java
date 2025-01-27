@@ -7,7 +7,9 @@ import com.queryapplication.exception.ResourceNotFoundException;
 import com.queryapplication.repository.RoleRepository;
 import com.queryapplication.repository.UserRepository;
 import com.queryapplication.service.AdminService;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -19,11 +21,14 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private PasswordEncoder passwordEncoder;
+
 
     @Autowired
-    public AdminServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
+    public AdminServiceImpl(UserRepository userRepository, RoleRepository roleRepository,PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -40,7 +45,7 @@ public class AdminServiceImpl implements AdminService {
         newUser.setFirstName(createAdminDTO.getFirstName());
         newUser.setEmail(createAdminDTO.getEmail());
         newUser.setUsername(createAdminDTO.getUsername());
-        newUser.setPassword(createAdminDTO.getPassword());
+        newUser.setPassword(passwordEncoder.encode(createAdminDTO.getPassword()));
         newUser.setLocation(LocationName.valueOf(String.valueOf(createAdminDTO.getLocation())));
         newUser.setStatus(Status.ACTIVE);
 
@@ -94,6 +99,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public Users editUser(Long userId, UpdateAdminDTO updateAdminDTO) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + userId));
@@ -101,18 +107,31 @@ public class AdminServiceImpl implements AdminService {
         if (updateAdminDTO.getFirstName() != null && !updateAdminDTO.getFirstName().isEmpty()) {
             user.setFirstName(updateAdminDTO.getFirstName());
         }
-        if (updateAdminDTO.getEmail() != null && !updateAdminDTO.getEmail().isEmpty()) {
-            user.setEmail(updateAdminDTO.getEmail());
+        if (updateAdminDTO.getEmail() != null && !updateAdminDTO.getEmail().trim().isEmpty()) {
+            String newEmail = updateAdminDTO.getEmail().trim();
+            if (!newEmail.equals(user.getEmail())) {
+                Users existingUserWithEmail = userRepository.findByEmail(newEmail).orElse(null);
+                if (existingUserWithEmail != null && !existingUserWithEmail.getId().equals(userId)) {
+                    throw new RuntimeException("Email already in use!");
+                }
+                user.setEmail(newEmail);
+            }
         }
+
         if (updateAdminDTO.getUsername() != null && !updateAdminDTO.getUsername().isEmpty()) {
-            user.setUsername(updateAdminDTO.getUsername());
+            if (!updateAdminDTO.getUsername().equals(user.getUsername())) {
+                if (userRepository.existsByUsername(updateAdminDTO.getUsername())) {
+                    throw new RuntimeException("Username already taken!");
+                }
+                user.setUsername(updateAdminDTO.getUsername());
+            }
         }
         if (updateAdminDTO.getLocation() != null && !updateAdminDTO.getLocation().isEmpty()) {
             try {
                 LocationName locationName = LocationName.valueOf(updateAdminDTO.getLocation().toUpperCase());
                 user.setLocation(locationName);
             } catch (IllegalArgumentException e) {
-                throw new ResourceNotFoundException("Invalid location: " + updateAdminDTO.getLocation());
+                throw new RuntimeException("Invalid location: " + updateAdminDTO.getLocation());
             }
         }
 
