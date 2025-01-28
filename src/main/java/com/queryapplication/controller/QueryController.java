@@ -172,7 +172,6 @@ public class QueryController {
         return ResponseEntity.ok("Tag removed from query successfully.");
     }
 
-
     @DeleteMapping("/tags/{id}")
     public ResponseEntity<String> deleteTagById(@PathVariable Long id) {
         tagService.deleteTagById(id);
