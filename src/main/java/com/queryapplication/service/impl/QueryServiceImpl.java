@@ -251,13 +251,16 @@ public class QueryServiceImpl implements QueryService {
                     .filter(tagName -> !existingTagNames.contains(tagName))
                     .map(tagName -> {
                         TagDTO tagDTO = queryDTO.getTags().stream()
-                                .filter(tag -> tag.getTagName().equals(tagName))
+                                .filter(tag -> tag.getTagName().equalsIgnoreCase(tagName))
                                 .findFirst()
                                 .orElseThrow(() -> new IllegalStateException("Tag group missing for " + tagName));
 
                         TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
-                                .orElseThrow(() -> new IllegalArgumentException("Tag group not found for " + tagDTO.getTagGroupName()));
-
+                                .orElseGet(() -> {
+                                    TagGroup newTagGroup = new TagGroup();
+                                    newTagGroup.setName(tagDTO.getTagGroupName());
+                                    return tagGroupRepository.save(newTagGroup);
+                                });
                         Tag newTag = new Tag();
                         newTag.setTagName(tagName);
                         newTag.setTagGroup(tagGroup);

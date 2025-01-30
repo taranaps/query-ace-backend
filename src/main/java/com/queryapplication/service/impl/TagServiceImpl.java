@@ -120,19 +120,24 @@ public class TagServiceImpl implements TagService {
     @Override
     public TagDTO addTag(TagDTO tagDTO) {
         TagGroup tagGroup = tagGroupRepository.findByName(tagDTO.getTagGroupName())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid tag group: " + tagDTO.getTagGroupName()));
-
-        if (tagRepository.findByTagName(tagDTO.getTagName()).isPresent()) {
-            throw new IllegalArgumentException("Tag already exists: " + tagDTO.getTagName());
+                .orElseGet(() -> {
+                    TagGroup newTagGroup = new TagGroup();
+                    newTagGroup.setName(tagDTO.getTagGroupName());
+                    return tagGroupRepository.save(newTagGroup);
+                });
+        Tag tag = tagRepository.findByTagName(tagDTO.getTagName())
+                .orElseGet(() -> {
+                    Tag newTag = new Tag();
+                    newTag.setTagName(tagDTO.getTagName());
+                    newTag.setTagGroup(tagGroup);
+                    newTag.setCreatedAt(LocalDateTime.now());
+                    return tagRepository.save(newTag);
+                });
+        if (!tag.getTagGroup().getName().equals(tagDTO.getTagGroupName())) {
+            tag.setTagGroup(tagGroup);
+            tag = tagRepository.save(tag);
         }
-
-        Tag tag = new Tag();
-        tag.setTagName(tagDTO.getTagName());
-        tag.setTagGroup(tagGroup);
-        tag.setCreatedAt(LocalDateTime.now());
-
-        Tag savedTag = tagRepository.save(tag);
-        return new TagDTO(savedTag.getTagName(), savedTag.getTagGroup().getName());
+        return new TagDTO(tag.getTagName(), tag.getTagGroup().getName());
     }
 
     @Override
