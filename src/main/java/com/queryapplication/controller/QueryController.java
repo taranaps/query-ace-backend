@@ -81,9 +81,6 @@ public class QueryController {
             @PathVariable Long queryId,
             @RequestBody List<AnswerRequestDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswersToQuery(queryId, newAnswers);
-//        Users user = userRepository.findById(newAnswers.get(0).getUserId())
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        activityLogService.logActivity("added", "answers to query ID: " + queryId);
         return ResponseEntity.ok(response);
     }
 
@@ -127,15 +124,11 @@ public class QueryController {
         NewAnswerDTO newAnswerDTO = newAnswerDetails.get(0);
         queryService.editAnswer(answerId, newAnswerDTO);
     }
-
-
-
     @PostMapping("/answers/{answerId}/copy")
     public ResponseEntity<String> copyAnswer(@PathVariable Long answerId) {
         queryService.copyAnswer(answerId);
         return ResponseEntity.ok("Answer copied successfully. Copy count has been updated.");
     }
-
     // -------------------- Tag-related APIs --------------------
 
     @GetMapping("/tags/groups")
