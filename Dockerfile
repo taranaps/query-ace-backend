@@ -17,4 +17,5 @@ RUN mvn clean package
 EXPOSE 8080
 
 # Command to run the Spring Boot app
-CMD ["java", "-jar", "/app/target/*.jar"]
+CMD ["java", "-jar", "/app/target/Query-Application-0.0.1-SNAPSHOT.jar"]
+
