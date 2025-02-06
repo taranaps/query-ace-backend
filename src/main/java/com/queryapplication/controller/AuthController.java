@@ -121,7 +121,9 @@ public class AuthController {
 
             logger.info("User logged in successfully: {}, Role: {}", loginDTO.getEmail(), role);
             Long userId = userPrincipal.getId();
-            JwtResponse response = new JwtResponse(jwt, "Bearer", role,userId);
+            String email = userPrincipal.getEmail();
+            String username = userPrincipal.getUsername();
+            JwtResponse response = new JwtResponse(jwt, "Bearer", role,userId,username,email);
             logger.debug("Generated token: {}", jwt);
 
             return ResponseEntity.ok(response);
