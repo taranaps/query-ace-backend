@@ -43,6 +43,8 @@ public class JwtTokenProvider {
                 .setSubject(userPrincipal.getUsername())
                 .claim("roles", roles)
                 .claim("userId", userPrincipal.getId())
+                .claim("username", userPrincipal.getUsername())
+                .claim("email", userPrincipal.getEmail())
                 .setIssuedAt(now) // "iat" claim (in milliseconds)
                 .setExpiration(expiryDate) // "exp" claim (in seconds)
                 .signWith(getSigningKey())
