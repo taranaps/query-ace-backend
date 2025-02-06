@@ -82,8 +82,7 @@ public class AdminController {
 
             activityLogService.logActivity(
                     "Created new admin",
-                    String.format("Admin %s created a new admin with username: %s",
-                            authentication.getName(),
+                    String.format(" with username: %s",
                             newAdmin.getUsername())
             );
 
@@ -96,7 +95,7 @@ public class AdminController {
     }
 
     @PutMapping("/toggle-status/{adminId}")
-    public ResponseEntity toggleAdminStatus(@PathVariable Long adminId, @RequestBody Map<String, Long> requestData) {
+    public ResponseEntity toggleAdminStatus(@PathVariable Long adminId, @RequestBody Map<String, Long> requestData, Authentication authentication) {
         Long userId = requestData.get("userId");
 
         Users user = userRepository.findById(userId)
@@ -104,8 +103,9 @@ public class AdminController {
 
         Users updatedAdmin = adminService.toggleAdminStatus(adminId);
 
-        activityLogService.logActivity("Toggled admin status", "Admin toggled the status for admin ID: " + adminId);
-
+        activityLogService.logActivity("Toggled admin status",
+                String.format(" for admin: %s",
+                        user.getUsername()));
         return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
     }
 
@@ -117,7 +117,7 @@ public class AdminController {
 
 
     @PatchMapping("/edit")
-    public ResponseEntity<Users> editUser(@RequestBody Map<String, Object> requestData) {
+    public ResponseEntity<Users> editUser(@RequestBody Map<String, Object> requestData, Authentication authentication) {
         Long userId = Long.parseLong(requestData.get("userId").toString());
         UpdateAdminDTO updateAdminDTO = new UpdateAdminDTO();
         if (requestData.containsKey("firstName")) {
@@ -135,17 +135,16 @@ public class AdminController {
 
         Users updatedUser = adminService.editUser(userId, updateAdminDTO);
 
-        activityLogService.logActivity(
-                "Edited user details",
-                String.format("Admin edited user ID: %d with new details.", userId)
-        );
+        activityLogService.logActivity("Edited user details",
+                String.format(" for admin: %s",
+                        updatedUser.getUsername()));
 
         return new ResponseEntity<>(updatedUser, HttpStatus.OK);
     }
     @GetMapping("/users-names")
     public ResponseEntity<List<UserDTO>> getAllUserNames() {
         try {
-            Iterable<Users> users = adminService.getAllUsers();
+            Iterable<Users> users   = adminService.getAllUsers();
             List<UserDTO> userDTOs = StreamSupport.stream(users.spliterator(), false)
                     .map(user -> {
                         UserDTO dto = new UserDTO();
