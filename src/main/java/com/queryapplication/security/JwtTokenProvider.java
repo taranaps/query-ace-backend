@@ -63,7 +63,7 @@ public class JwtTokenProvider {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject();
+        return claims.get("email", String.class);
     }
 
     public boolean validateToken(String token) {
