@@ -7,11 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface QueryRepository extends JpaRepository<com.queryapplication.entity.Query, Long> {
     List<com.queryapplication.entity.Query> findByQuestionContaining(String keyword);
     List<com.queryapplication.entity.Query> findByAddedBy(Users addedBy);
     List<com.queryapplication.entity.Query> findQueriesByAddedByIn(List<com.queryapplication.entity.Users> users);
+    Optional<com.queryapplication.entity.Query> findByQuestion(String question);
+    List<com.queryapplication.entity.Query> findAllByQuestion(String question);
 
 
     @Query("SELECT q FROM com.queryapplication.entity.Query q " +

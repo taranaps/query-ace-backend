@@ -26,7 +26,7 @@ public class Query {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "question", columnDefinition = "TEXT", unique = true)
+    @Column(name = "question", columnDefinition = "TEXT")
     private String question;
 
     @ManyToOne

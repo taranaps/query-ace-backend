@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
     List<Answer> findByQueryId(Long queryId);
+    List<Answer> findByQuery(com.queryapplication.entity.Query query);
+
 }

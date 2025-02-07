@@ -234,9 +234,11 @@ public class QueryServiceImpl implements QueryService {
     @Override
     public List<Long> addBulkQueries(List<BulkQueryDTO> bulkQueries) {
         return bulkQueries.stream().map(queryDTO -> {
+            // Find the user who added the query
             Users user = userRepository.findById(queryDTO.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+            // Process tags first
             Set<String> tagNames = queryDTO.getTags().stream()
                     .map(TagDTO::getTagName)
                     .collect(Collectors.toSet());
@@ -244,6 +246,7 @@ public class QueryServiceImpl implements QueryService {
             List<Tag> existingTagsList = tagRepository.findByTagNameIn(tagNames);
             Set<Tag> existingTagsSet = new HashSet<>(existingTagsList);
 
+            // Create new tags if needed
             Set<String> existingTagNames = existingTagsSet.stream()
                     .map(Tag::getTagName)
                     .collect(Collectors.toSet());
@@ -261,6 +264,7 @@ public class QueryServiceImpl implements QueryService {
                                     newTagGroup.setName(tagDTO.getTagGroupName());
                                     return tagGroupRepository.save(newTagGroup);
                                 });
+
                         Tag newTag = new Tag();
                         newTag.setTagName(tagName);
                         newTag.setTagGroup(tagGroup);
@@ -268,31 +272,98 @@ public class QueryServiceImpl implements QueryService {
                     })
                     .collect(Collectors.toSet());
 
+            // Save new tags and update existing tags set
             newTags = new HashSet<>(tagRepository.saveAll(newTags));
             existingTagsSet.addAll(newTags);
 
-            Query query = new Query();
-            query.setQuestion(queryDTO.getQuestion());
-            query.setAddedBy(user);
-            query.setTags(existingTagsSet);
-            Query savedQuery = queryRepository.save(query);
+            // Extract current Company tag if it exists
+            Optional<Tag> currentCompanyTag = existingTagsSet.stream()
+                    .filter(tag -> "Company".equalsIgnoreCase(tag.getTagGroup().getName()))
+                    .findFirst();
 
-            queryDTO.getAnswers().forEach(answerDTO -> {
-                Users answerUser = userRepository.findById(answerDTO.getUserId())
-                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            // Find existing queries with the same question
+            List<Query> existingQueries = queryRepository.findAllByQuestion(queryDTO.getQuestion());
 
-                Answer answer = new Answer();
-                answer.setAnswer(answerDTO.getAnswer());
-                answer.setAddedBy(answerUser);
-                answer.setQuery(savedQuery);
+            // If no existing queries found, create new entry
+            if (existingQueries.isEmpty()) {
+                return saveNewQuery(queryDTO, user, existingTagsSet);
+            }
 
-                answerRepository.save(answer);
-            });
+            // Check existing queries
+            for (Query existingQuery : existingQueries) {
+                Set<Tag> existingQueryTags = existingQuery.getTags();
 
-            return savedQuery.getId();
+                // Extract existing query's Company tag
+                Optional<Tag> existingCompanyTag = existingQueryTags.stream()
+                        .filter(tag -> "Company".equalsIgnoreCase(tag.getTagGroup().getName()))
+                        .findFirst();
+
+                // Case 1: Both have Company tags but they're different
+                if (currentCompanyTag.isPresent() && existingCompanyTag.isPresent() &&
+                        !currentCompanyTag.get().getTagName().equals(existingCompanyTag.get().getTagName())) {
+                    continue; // Try next query or create new if none match
+                }
+
+                // Case 2: One has Company tag and other doesn't
+                if (currentCompanyTag.isPresent() != existingCompanyTag.isPresent()) {
+                    continue; // Try next query or create new if none match
+                }
+
+                // Case 3: Neither has Company tag or Company tags match
+                // Check if answers match
+                List<Answer> existingAnswers = answerRepository.findByQuery(existingQuery);
+                boolean answersMatch = queryDTO.getAnswers().stream()
+                        .allMatch(answerDTO -> existingAnswers.stream()
+                                .anyMatch(existingAnswer ->
+                                        existingAnswer.getAnswer().equalsIgnoreCase(answerDTO.getAnswer())));
+
+                if (answersMatch) {
+                    // Add any new answers to existing query
+                    queryDTO.getAnswers().forEach(answerDTO -> {
+                        if (existingAnswers.stream().noneMatch(existingAnswer ->
+                                existingAnswer.getAnswer().equalsIgnoreCase(answerDTO.getAnswer()))) {
+                            Users answerUser = userRepository.findById(answerDTO.getUserId())
+                                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+                            Answer newAnswer = new Answer();
+                            newAnswer.setAnswer(answerDTO.getAnswer());
+                            newAnswer.setAddedBy(answerUser);
+                            newAnswer.setQuery(existingQuery);
+
+                            answerRepository.save(newAnswer);
+                        }
+                    });
+                    return existingQuery.getId();
+                }
+            }
+
+            // If no matching query found or Company tag different, create new entry
+            return saveNewQuery(queryDTO, user, existingTagsSet);
         }).collect(Collectors.toList());
     }
 
+    // Keep the existing saveNewQuery method as is
+    private Long saveNewQuery(BulkQueryDTO queryDTO, Users user, Set<Tag> tags) {
+        Query query = new Query();
+        query.setQuestion(queryDTO.getQuestion());
+        query.setAddedBy(user);
+        query.setTags(tags);
+        Query savedQuery = queryRepository.save(query);
+
+        queryDTO.getAnswers().forEach(answerDTO -> {
+            Users answerUser = userRepository.findById(answerDTO.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+            Answer answer = new Answer();
+            answer.setAnswer(answerDTO.getAnswer());
+            answer.setAddedBy(answerUser);
+            answer.setQuery(savedQuery);
+
+            answerRepository.save(answer);
+        });
+
+        return savedQuery.getId();
+    }
     @Override
     public void deleteAnswer(Long answerId) {
         Answer answer = answerRepository.findById(answerId)
