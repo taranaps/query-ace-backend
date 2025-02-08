@@ -69,7 +69,6 @@ public class QueryController {
         return ResponseEntity.ok(queryIds);
     }
 
-
     @PostMapping("/id/answers")
     public ResponseEntity<List<AnswerResponseDTO>> addAnswers(@RequestBody List<NewAnswerDTO> newAnswers) {
         List<AnswerResponseDTO> response = queryService.addAnswers(newAnswers);

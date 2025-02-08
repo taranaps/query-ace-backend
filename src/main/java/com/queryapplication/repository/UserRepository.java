@@ -18,15 +18,13 @@ public interface UserRepository extends JpaRepository<Users, Long> {
 
     Optional<Users> findByUsername(String username);
 
+    @Query("SELECT u FROM Users u WHERE LOWER(u.email) = LOWER(:email)")
     Optional<Users> findByEmail(String email);
 
     Optional<Users> findByUsernameOrEmail(String username, String email);
 
     Users findByEmailAndPassword(String email, String password);
     List<Users> findByUsernameIn(List<String> usernames);
-
-
-
 
     @Query("SELECT u FROM Users u JOIN u.roles r WHERE r.roleName = :roleName")
     Iterable<Users> findByRoleName(RoleName roleName);
