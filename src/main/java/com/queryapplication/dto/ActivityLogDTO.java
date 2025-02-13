@@ -1,5 +1,4 @@
 package com.queryapplication.dto;
-
 import lombok.Data;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
