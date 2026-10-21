@@ -44,12 +44,12 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        .requestMatchers("/api/v1/queryapplication/admin/create","/api/v1/queryapplication/admin/toggle-status/{adminId}","/api/v1/queryapplication/admin/edit").hasAuthority("SUPER_ADMIN")
                         .requestMatchers("/api/v1/queryapplication/admin/**").authenticated()
                         .requestMatchers("/api/v1/queryapplication/queries/**","/api/v1/queryapplication/**","/api/v1/queryapplication/admin/users",
                                 "/api/v1/queryapplication/admin/users-names",
                                 "/api/v1/queryapplication/admin/details").authenticated()
                         .requestMatchers("/api/v1/queryapplication/logs/**","/api/v1/queryapplication/logs").authenticated()
-                        .requestMatchers("/api/v1/queryapplication/admin/create","/api/v1/queryapplication/admin/toggle-status/{adminId}","/api/v1/queryapplication/admin/edit").hasAuthority("SUPER_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(
