@@ -2,6 +2,7 @@ package com.queryapplication.config;
 
 import com.queryapplication.security.JwtAuthenticationEntryPoint;
 import com.queryapplication.security.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,10 +35,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                )
-
-                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/queryapplication/auth/**",
                                 "/api/v1/queryapplication/auth/register",
