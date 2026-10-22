@@ -95,7 +95,6 @@ public class AuthController {
             String email = userPrincipal.getEmail();
             String username = userPrincipal.getUsername();
             JwtResponse response = new JwtResponse(jwt, "Bearer", role,userId,username,email);
-            logger.debug("Generated token: {}", jwt);
 
             return ResponseEntity.ok(response);
 
@@ -104,7 +103,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid email or password");
         } catch (Exception e) {
-            logger.error("Login failed - Unexpected error for email: {}", loginDTO.getEmail(), e);
+            logger.warn("Login failed - Unexpected error for email: {}", loginDTO.getEmail());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred");
         }

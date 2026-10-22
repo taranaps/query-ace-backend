@@ -41,7 +41,7 @@ public class SecurityConfig {
                                 "/api/v1/queryapplication/auth/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "actuator/health/"
+                                "/actuator/health"
                         ).permitAll()
                         .requestMatchers("/api/v1/queryapplication/admin/create",
                                 "/api/v1/queryapplication/admin/toggle-status/{adminId}",
